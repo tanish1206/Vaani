@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAANI — Boliye. Vaani Sambhal Legi. | Voice-First AI Assistant</title>
+  <meta name="description" content="Multilingual voice-first AI assistant for Indian shopkeepers and small businesses. Bol-Khata, Parchi & Sensex Awaaz powered by Gnani Prisma, Evon & Timbre.">
+  <meta name="theme-color" content="#3A0F34">
+
+  <!-- Favicon with Devanagari 'व' -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23EAAA00'/><text x='50' y='65' font-size='52' font-family='serif' font-weight='bold' fill='%233A0F34' text-anchor='middle'>व</text></svg>">
+
+  <!-- Design Tokens & Stylesheets -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/landing.css">
+  <link rel="stylesheet" href="styles/components.css">
+</head>
+<body>
+
+  <!-- Architectural Coordinate Meter & Vertical Alignment Guides -->
+  <div class="arch-guide-vertical arch-guide-left" aria-hidden="true"></div>
+  <div class="arch-guide-vertical arch-guide-right" aria-hidden="true"></div>
+  <div class="arch-meta-label arch-meta-vertical-left" aria-hidden="true">TIME MET&amp;DATE</div>
+  <div class="arch-meta-label arch-meta-vertical-subtle" aria-hidden="true">SUBTLE METADATS</div>
+  <div class="arch-meta-label arch-meta-vertical-right" aria-hidden="true">I FINE</div>
+
+  <!-- Top Header Ruler Bar with Fine Tick Marks -->
+  <div class="arch-ruler" aria-hidden="true">
+    <span>00.00 — LATENCY BUDGET &le; 4.0s</span>
+    <div class="arch-ruler-ticks">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <span>LOCAL SQLITE &middot; SOVEREIGN INDIAN AI &middot; GNANI PRISMA / EVON / TIMBRE</span>
+  </div>
+
+  <!-- ==========================================================================
+       SITE HEADER NAVIGATION
+       ========================================================================== -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="brand-wrapper">
+        <a href="#hero" class="brand-title">VAANI</a>
+        <span class="brand-tagline">Boliye. Vaani Sambhal Legi.</span>
+      </div>
+
+      <nav class="nav-menu" aria-label="Main Navigation">
+        <a href="#hero" class="nav-link active">Home</a>
+        <a href="#modules" class="nav-link">Bol-Khata</a>
+        <a href="#modules" class="nav-link">Parchi</a>
+        <a href="#modules" class="nav-link">Sensex Awaaz</a>
+        <a href="#how-it-works" class="nav-link">Architecture</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Multilingual Toggle Button -->
+        <button id="langSelectorBtn" class="lang-selector-btn" title="Change Language (English / हिन्दी / मराठी)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span id="currentLangLabel">EN</span>
+        </button>
+
+        <!-- Night Mode Toggle -->
+        <button id="themeToggleBtn" class="icon-btn" title="Toggle Night-Shop Mode" aria-label="Night Shop Mode">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- Search / Quick Action Button -->
+        <a href="#voice-lab" class="icon-btn" title="Quick Voice Search" aria-label="Quick Voice Search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==========================================================================
+         HERO SECTION (FAITHFUL TO REFERENCE IMAGE)
+         ========================================================================== -->
+    <section id="hero" class="hero-section">
+      <div class="hero-canvas">
+        <!-- Giant Headline 1 (Top Left) -->
+        <h1 id="heroHeadlineBoliye" class="headline-boliye">Boliye,</h1>
+
+        <!-- High-End Botanical Floral Artwork & Integrated Audio Waveform -->
+        <div class="hero-artwork-wrap">
+          <img src="assets/botanical-artwork.svg" alt="Botanical orchid artwork with integrated golden audio waveforms" loading="eager">
+        </div>
+
+        <!-- Giant Headline 2 (Bottom Right) -->
+        <div id="heroHeadlineVaani" class="headline-vaani">Vaani</div>
+
+        <!-- Supporting Editorial Copy (Under Vaani) -->
+        <p id="heroSupportingCopy" class="hero-supporting-copy">
+          <span>Apne kaam, hisaab aur zaroori jaankari</span>
+          <span>&mdash; ab sirf apni awaaz se.</span>
+        </p>
+
+        <!-- Hero Primary & Secondary CTAs (Left Side) -->
+        <div class="hero-cta-group">
+          <a href="#voice-lab" id="heroVoiceBtn" class="btn-primary-voice">
+            <span id="heroVoiceBtnText">Start Speaking</span>
+            <span class="mic-icon-pill">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+            </span>
+          </a>
+
+          <a href="#voice-lab" class="link-secondary-demo">
+            <span>Watch Demo</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- ==========================================================================
+           PRODUCT SHOWCASE: LAYERED MOCKUPS (FAITHFUL TO REFERENCE IMAGE)
+           ========================================================================== -->
+      <div class="showcase-stage">
+        
+        <!-- 1. LEFT OVERLAPPING CARD: BOL-KHATA (LEDGER) -->
+        <div class="mockup-card-khata bahi-khata-sheet">
+          <div class="khata-card-header">
+            <span class="khata-title">Bol-Khata</span>
+            <span class="khata-badge-live">Live Ledger</span>
+          </div>
+          <table class="khata-table">
+            <thead>
+              <tr>
+                <th scope="col">सलाम</th>
+                <th scope="col">लड़ेकर (ग्राहक)</th>
+                <th scope="col">निर्यातल</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>२१</td>
+                <td>
+                  <div class="khata-customer-name">रमेश (Ramesh)</div>
+                  <div class="khata-note-devanagari">नामेश : ₹५०० अधता - उबवार ॥</div>
+                </td>
+                <td>
+                  <div class="khata-balance-amount">&#8377;500</div>
+                  <div class="khata-balance-type">Udhaar</div>
+                </td>
+              </tr>
+              <tr>
+                <td>२२</td>
+                <td>
+                  <div class="khata-customer-name">सुनीता (Sunita)</div>
+                  <div class="khata-note-devanagari">दुकान सामान - जमा ₹१५०</div>
+                </td>
+                <td>
+                  <div class="khata-balance-amount" style="color: var(--success);">&#8377;0</div>
+                  <div class="khata-balance-type" style="color: var(--success);">Chukta</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top: 14px; font-size: 11px; color: var(--aubergine-70); display: flex; justify-content: space-between;">
+            <span>&bull; Integer paise precision</span>
+            <span>&bull; Append-only audit</span>
+          </div>
+        </div>
+
+        <!-- 2. CENTRAL SMARTPHONE MOCKUP WITH MANDALA & GLOWING MIC ORB -->
+        <div class="mockup-phone-frame">
+          <div class="phone-screen">
+            <!-- Dynamic Island -->
+            <div class="phone-island">
+              <div class="phone-island-cam"></div>
+              <div class="phone-island-sensor"></div>
+            </div>
+
+            <!-- Top Header on Phone Screen -->
+            <div class="phone-header-title">VAANI</div>
+
+            <!-- Center Mandala & Glowing Mic Orb -->
+            <div class="phone-interactive-center">
+              <img src="assets/mandala.svg" alt="Ornate golden Indian mandala background" class="phone-mandala-bg">
+              
+              <!-- Radiating Waveform Bars -->
+              <div class="phone-orb-waveforms" aria-hidden="true">
+                <span class="orb-wave-bar" style="height: 12px;"></span>
+                <span class="orb-wave-bar" style="height: 24px;"></span>
+                <span class="orb-wave-bar" style="height: 38px;"></span>
+                <span class="orb-wave-bar" style="height: 18px;"></span>
+                <span class="orb-wave-bar" style="height: 30px;"></span>
+                <span class="orb-wave-bar" style="height: 14px;"></span>
+              </div>
+
+              <!-- Glowing Mic Orb (Clickable) -->
+              <button id="phoneMicOrb" class="phone-mic-orb" title="Click to interact with Vaani" aria-label="Microphone">
+                <svg class="phone-mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Bottom Wordmark on Phone Screen -->
+            <div class="phone-bottom-caption">VAANI</div>
+          </div>
+        </div>
+
+        <!-- 3. RIGHT TOP OVERLAPPING CARD: PARCHI (MEDICINE REMINDERS) -->
+        <div class="mockup-card-parchi parchi-slip">
+          <div class="parchi-header">
+            <span class="parchi-title">Parchi</span>
+            <span class="rx-stamp">&#8478;</span>
+          </div>
+          <div class="parchi-lines">
+            <div class="parchi-ruled-line"></div>
+            <div class="parchi-med-row">
+              <div class="parchi-med-name">Maa: BP ki goli</div>
+              <span class="dose-time-badge">&#9200; Subah 8:00 AM &bull; After food</span>
+            </div>
+            <div class="parchi-ruled-line"></div>
+          </div>
+          <div class="parchi-price-line">
+            <span>Dawaar: &#8377;500</span>
+            <span style="font-size: 13px; font-weight: bold; color: var(--marigold-600);">5 Days Left</span>
+          </div>
+          <p class="doctor-disclaimer-note">Yeh sirf aapki bataayi jaankari hai. Dawa ke baare mein doctor se poochiye.</p>
+        </div>
+
+        <!-- 4. RIGHT BOTTOM OVERLAPPING CARD: SENSEX AWAAZ -->
+        <div class="mockup-card-sensex">
+          <div class="sensex-title">Sensex Awaaz</div>
+          <p class="sensex-desc">High-end, custom typography, subtle shadows, and controlled glass...</p>
+          
+          <!-- Candlestick / Bar Chart Preview -->
+          <div class="sensex-chart-preview">
+            <div class="sensex-chart-bar" style="height: 35%;"></div>
+            <div class="sensex-chart-bar highlight" style="height: 55%;"></div>
+            <div class="sensex-chart-bar" style="height: 45%;"></div>
+            <div class="sensex-chart-bar highlight" style="height: 75%;"></div>
+            <div class="sensex-chart-bar" style="height: 60%;"></div>
+            <div class="sensex-chart-bar highlight" style="height: 90%;"></div>
+            <div class="sensex-chart-bar" style="height: 70%;"></div>
+            <div class="sensex-chart-bar highlight" style="height: 85%;"></div>
+          </div>
+
+          <div class="sensex-stats-row">
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">BSE Sensex</div>
+              <div class="sensex-index-val">83,410.20</div>
+            </div>
+            <div class="sensex-delta-tag">
+              &#9650; +342.80 (+0.43%)
+            </div>
+          </div>
+          <div style="margin-top: 8px; font-size: 10px; color: var(--text-subtle);">
+            Sample data &bull; Jaankari ke liye, nivesh salaah nahin.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         INTERACTIVE VOICE LAB & LIFECYCLE SIMULATOR
+         ========================================================================== -->
+    <section id="voice-lab" class="section-container">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto;">
+        <span class="section-badge">Live Interactive Pipeline</span>
+        <h2 class="section-title">Experience the Voice-First Loop</h2>
+        <p class="section-subtitle">
+          Natural speech in Hindi, Marathi or Hinglish goes through Gnani Prisma STT, Evon reasoning, Python guardrails, SQLite transactions, and Timbre TTS.
+        </p>
+      </div>
+
+      <div class="voice-lab-card">
+        <!-- Left Side: Interactive Controls & Lifecycle States -->
+        <div class="voice-lab-left">
+          <div>
+            <div class="voice-status-lifecycle">
+              <span class="status-pill active" data-step="idle">1. Idle</span>
+              <span class="status-pill" data-step="listening">2. Listening</span>
+              <span class="status-pill" data-step="processing">3. Processing</span>
+              <span class="status-pill" data-step="understanding">4. Evon Reasoning</span>
+              <span class="status-pill" data-step="executing">5. SQLite Execution</span>
+              <span class="status-pill" data-step="speaking">6. Timbre Speaking</span>
+            </div>
+
+            <!-- Voice Orb Dock -->
+            <div class="voice-orb-interactive-dock">
+              <button id="dockMicBtn" class="dock-mic-button" title="Click to speak" aria-label="Microphone">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+              <div id="dockMicStatusText" class="dock-mic-status-text">Bolne ke liye mic dabayein (Tap or press Space)</div>
+            </div>
+          </div>
+
+          <!-- Quick Test Utterance Trays (From 40-Utterance Benchmark) -->
+          <div class="sample-utterances-tray">
+            <span class="tray-title">Try real Indian voice commands:</span>
+            <button class="sample-chip-btn" data-scenario="khata_multi">
+              <span>"Ramesh ko 200 udhaar likh de aur Sunita ne 150 diye"</span>
+              <span>&rarr;</span>
+            </button>
+            <button class="sample-chip-btn" data-scenario="parchi_bp">
+              <span>"Maa ko BP ki goli subah shaam 5 din, khaane ke baad"</span>
+              <span>&rarr;</span>
+            </button>
+            <button class="sample-chip-btn" data-scenario="bazaar_overview">
+              <span>"Aaj market kaisa raha?"</span>
+              <span>&rarr;</span>
+            </button>
+            <button class="sample-chip-btn" data-scenario="marathi_khata">
+              <span>"रमेश ला दोनशे उधार लिहा" (Marathi)</span>
+              <span>&rarr;</span>
+            </button>
+            <button class="sample-chip-btn" data-scenario="guardrail_investment">
+              <span>"Kya mujhe Reliance khareedna chahiye?" (Guardrail Refusal)</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side: Pipeline Inspector (Transcript -> JSON -> Guardrails -> Speech) -->
+        <div class="voice-lab-right">
+          <!-- 1. STT Transcript -->
+          <div class="inspector-card">
+            <div class="inspector-header">
+              <span class="inspector-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path></svg>
+                Gnani Prisma v3.0 Transcript
+              </span>
+              <span class="inspector-tag">Code-Mixed / Auto-Detect</span>
+            </div>
+            <div id="inspectorTranscript" class="transcript-display-box">
+              "Ramesh ko 200 udhaar likh de aur Sunita ne 150 diye"
+            </div>
+          </div>
+
+          <!-- 2. Evon Reasoning JSON -->
+          <div class="inspector-card">
+            <div class="inspector-header">
+              <span class="inspector-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                Gnani Evon v3.3 Structured Intent JSON
+              </span>
+              <span class="inspector-tag">Deterministic Contract</span>
+            </div>
+            <pre id="inspectorJson" class="evon-json-box">{
+  "language": "hinglish",
+  "actions": [
+    { "tool": "add_credit", "args": { "customer_name": "Ramesh", "amount": 200 } },
+    { "tool": "record_payment", "args": { "customer_name": "Sunita", "amount": 150 } }
+  ],
+  "clarification": null,
+  "confidence": 0.95
+}</pre>
+          </div>
+
+          <!-- 3. Python Guardrails & SQLite Checks -->
+          <div class="inspector-card">
+            <div class="inspector-header">
+              <span class="inspector-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Python Guardrail &amp; Database Verification
+              </span>
+              <span class="inspector-tag">Zero LLM DB Writes</span>
+            </div>
+            <div id="inspectorGuardrails" class="guardrails-check-list">
+              <div class="guardrail-item"><span class="check-icon">&#10003;</span><span>Amount under &pound;1,00,000 threshold</span></div>
+              <div class="guardrail-item"><span class="check-icon">&#10003;</span><span>Zero arithmetic performed by LLM</span></div>
+              <div class="guardrail-item"><span class="check-icon">&#10003;</span><span>Python validated integer paise calculation</span></div>
+              <div class="guardrail-item"><span class="check-icon">&#10003;</span><span>Append-only SQLite transaction with turn_id</span></div>
+            </div>
+          </div>
+
+          <!-- 4. Gnani Timbre TTS Spoken Response -->
+          <div class="spoken-reply-card">
+            <div class="reply-speaker-bar">
+              <span class="inspector-label" style="color: var(--aubergine);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                Gnani Timbre v2.5 Spoken Reply
+              </span>
+              <span class="inspector-tag">Template Formatted</span>
+            </div>
+            <div id="inspectorReplyText" class="reply-spoken-text">
+              "Ramesh ke khaate mein &#8377;200 jod diye (ab baaki &#8377;850). Sunita ke &#8377;150 jama ho gaye (hisaab barabar)."
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         THREE PRODUCT MODULES DEEP DIVE
+         ========================================================================== -->
+    <section id="modules" class="section-container" style="background-color: var(--ivory-surface); border-radius: var(--radius-xl); margin-top: 40px; margin-bottom: 40px;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto;">
+        <span class="section-badge">Crafted for Indian Realities</span>
+        <h2 class="section-title">Three Core Pillars of Vaani</h2>
+        <p class="section-subtitle">
+          Designed specifically for kirana owners, small businessmen, and families who run their lives on trust, memory, and spoken words.
+        </p>
+      </div>
+
+      <div class="modules-grid">
+        <!-- Module 1: Bol-Khata -->
+        <article class="module-card">
+          <div class="module-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+          <h3 class="module-card-title">Bol-Khata</h3>
+          <span class="module-card-subtitle">Digital Business Ledger</span>
+          <p class="module-card-desc">
+            No more lost paper notebooks or mental stress. Just speak naturally to record udhaar (credit) and jama (payments) in seconds.
+          </p>
+          <ul class="module-feature-list">
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Fuzzy Customer Matching:</strong> Maps "रमेश", "Ramesh", "Rameshh", "Ramesh ji" accurately.</span>
+            </li>
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Paise Precision:</strong> Integer math prevents float drift. Never makes accounting rounding errors.</span>
+            </li>
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>8-Second Voice Undo:</strong> Say "Galat ho gaya, hata do" or tap Undo to safely revert.</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- Module 2: Parchi -->
+        <article class="module-card">
+          <div class="module-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+            </svg>
+          </div>
+          <h3 class="module-card-title">Parchi</h3>
+          <span class="module-card-subtitle">Medicine Reminders</span>
+          <p class="module-card-desc">
+            Keep family elder care effortless. Speak the doctor's prescription, and Vaani schedules spoken alerts for every dose.
+          </p>
+          <ul class="module-feature-list">
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Verbatim Safety:</strong> Medicine names and doses stored strictly as spoken without alteration.</span>
+            </li>
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Smart Meal Slots:</strong> Automatically maps subah, shaam, dopahar, and khaane ke baad.</span>
+            </li>
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Strict Medical Refusal:</strong> Declines medical diagnosis or dosage changes by design.</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- Module 3: Sensex Awaaz -->
+        <article class="module-card">
+          <div class="module-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <h3 class="module-card-title">Sensex Awaaz</h3>
+          <span class="module-card-subtitle">Market Briefing</span>
+          <p class="module-card-desc">
+            Stay on top of your mutual funds and portfolio with spoken, jargon-free market overviews in your mother tongue.
+          </p>
+          <ul class="module-feature-list">
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Plain Language:</strong> "Sensex aaj 342 point upar band hua" instead of complex financial jargon.</span>
+            </li>
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Zero Investment Advice:</strong> Declines stock picks or buy/sell predictions immediately.</span>
+            </li>
+            <li class="module-feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Honest Freshness:</strong> Clear timestamped badges ("Live" vs "Sample Data").</span>
+            </li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         HOW VAANI WORKS (ARCHITECTURE FOR JUDGES & AUDITORS)
+         ========================================================================== -->
+    <section id="how-it-works" class="section-container">
+      <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+        <span class="section-badge">Sovereign Indian AI Stack</span>
+        <h2 class="section-title">How Vaani Executes Every Turn</h2>
+        <p class="section-subtitle">
+          Python validates, calculates, and writes the database. The language models only understand.
+        </p>
+      </div>
+
+      <div class="pipeline-diagram">
+        <!-- Step 1 -->
+        <div class="pipeline-step-card">
+          <span class="step-num">STAGE 01</span>
+          <h4 class="step-name">Audio Capture</h4>
+          <span class="step-model-badge">Web Audio / MediaRecorder</span>
+          <p class="step-desc">Shopkeeper voice captured in browser, streamed or converted to 16 kHz mono WAV.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="pipeline-step-card">
+          <span class="step-num">STAGE 02</span>
+          <h4 class="step-name">Speech to Text</h4>
+          <span class="step-model-badge">Gnani Prisma v3.0</span>
+          <p class="step-desc">Automatic language detection handles code-mixed speech, Hindi, Marathi, and Hinglish flawlessly.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="pipeline-step-card">
+          <span class="step-num">STAGE 03</span>
+          <h4 class="step-name">Intent Reasoning</h4>
+          <span class="step-model-badge">Gnani Evon v3.3 (30B)</span>
+          <p class="step-desc">Outputs strictly validated JSON action payloads. Never touches database directly.</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="pipeline-step-card">
+          <span class="step-num">STAGE 04</span>
+          <h4 class="step-name">Guardrails &amp; DB</h4>
+          <span class="step-model-badge">Python 3.10 + SQLite WAL</span>
+          <p class="step-desc">Validates limits, runs integer-paise math, writes local SQLite ledger with full rollback support.</p>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="pipeline-step-card">
+          <span class="step-num">STAGE 05</span>
+          <h4 class="step-name">Spoken Reply</h4>
+          <span class="step-model-badge">Gnani Timbre v2.5</span>
+          <p class="step-desc">Synthesizes warm, respectful audio replies with confirmed numbers in Hindi, Marathi, or English.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         MULTILINGUAL & SAFETY SECTION
+         ========================================================================== -->
+    <section class="section-container">
+      <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+        <span class="section-badge">Linguistic Sovereignty</span>
+        <h2 class="section-title">Built for Bharat's Code-Mixed Speech</h2>
+        <p class="section-subtitle">
+          Small business owners speak a natural blend of Hindi, Marathi, and English. Vaani embraces this fluid reality without requiring mode switches.
+        </p>
+      </div>
+
+      <div class="languages-tab-wrapper">
+        <div class="lang-buttons-bar">
+          <button class="lang-tab-pill active" data-lang="hi">हिन्दी (Hindi)</button>
+          <button class="lang-tab-pill" data-lang="mr">मराठी (Marathi)</button>
+          <button class="lang-tab-pill" data-lang="en">Hinglish / English</button>
+        </div>
+
+        <div class="lang-grid-display">
+          <div class="lang-demo-box">
+            <span class="lang-box-heading">Spoken Ledger Command</span>
+            <div class="lang-quote-text">"रमेश को दो सौ उधार लिख दो और सुनीता ने डेढ़ सौ दिए।"</div>
+            <div class="lang-quote-translation">Action: Credit ₹200 to Ramesh, Record payment of ₹150 from Sunita.</div>
+          </div>
+
+          <div class="lang-demo-box">
+            <span class="lang-box-heading">Vaani Spoken Response</span>
+            <div class="lang-quote-text">"रमेश के खाते में ₹200 जोड़ दिए, अब बाकी ₹850 है। सुनीता के ₹150 जमा हो गए।"</div>
+            <div class="lang-quote-translation">Audio confirmation delivered back in native natural speech.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         FREQUENTLY ASKED QUESTIONS (FAQ)
+         ========================================================================== -->
+    <section id="faq" class="section-container">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto;">
+        <span class="section-badge">Got Questions?</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">
+          Everything you need to know about Vaani's safety, privacy, and voice engine.
+        </p>
+      </div>
+
+      <div class="faq-accordion-list" style="margin: 40px auto 0;">
+        <div class="faq-item open">
+          <button class="faq-question-btn">
+            <span>Can the AI make math mistakes or hallucinate my financial numbers?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer-content">
+            <strong>Never.</strong> By architectural design, Gnani Evon only extracts user intent into structured JSON. All calculations, balance summations, and database writes are executed strictly by deterministic Python code using integer paise. The LLM has zero database write access and zero arithmetic responsibility.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Where is my business ledger data stored?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer-content">
+            Your data is stored in a local SQLite database (<code>vaani.db</code>) on your device. Only audio recordings are securely processed by Gnani's sovereign Indian speech infrastructure for transcription and synthesis; your ledger never leaves your control and is never sold to third parties.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>What happens if I make a mistake while speaking?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer-content">
+            Every transaction includes a prominent 8-second Voice Undo window. You can simply say <em>"Nahi, galat ho gaya"</em> or tap the Undo button on screen. The system maintains an append-only audit trail and cleanly voids erroneous transactions.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Does Vaani offer medical or investment advice?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer-content">
+            <strong>Strictly refused.</strong> Parchi only records verbatim medicine names and schedules reminders; it explicitly refuses dosage changes or medical advice. Sensex Awaaz only summarizes public market index data and strictly refuses stock recommendations.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>What if the shop environment is noisy?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer-content">
+            Prisma v3.0 is trained on real-world Indian acoustic environments, including street chatter and shop noise. Vaani also includes an on-screen text input alternative if the ambient noise makes speaking impractical.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         FINAL CTA BANNER
+         ========================================================================== -->
+    <section class="final-cta-section">
+      <h2 id="finalCtaTitle" class="final-cta-title">Boliye. Vaani Sambhal Legi.</h2>
+      <p id="finalCtaTagline" class="final-cta-tagline">
+        Voice-first intelligence crafted for Indian enterprise, local kiranas, and families.
+      </p>
+      <div class="final-cta-buttons">
+        <a href="#voice-lab" class="btn-primary-voice">
+          <span id="finalCtaBtnText">Experience Vaani Now</span>
+          <span class="mic-icon-pill">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path></svg>
+          </span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       SITE FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div>
+        <div class="footer-brand-title">VAANI</div>
+        <p class="footer-brand-tagline">बोलिए, वाणी संभाल लेगी।</p>
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-top: 14px; max-width: 320px; line-height: 1.6;">
+          Multilingual voice-first assistant built for the Gnani Great Indian AI Internship Challenge.
+        </p>
+      </div>
+
+      <div>
+        <div class="footer-column-title">Modules</div>
+        <ul class="footer-links-list">
+          <li><a href="#modules">Bol-Khata (Ledger)</a></li>
+          <li><a href="#modules">Parchi (Reminders)</a></li>
+          <li><a href="#modules">Sensex Awaaz (Bazaar)</a></li>
+          <li><a href="#voice-lab">Voice Simulator</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-column-title">Architecture</div>
+        <ul class="footer-links-list">
+          <li><a href="#how-it-works">Gnani Prisma v3.0</a></li>
+          <li><a href="#how-it-works">Gnani Evon v3.3</a></li>
+          <li><a href="#how-it-works">Gnani Timbre v2.5</a></li>
+          <li><a href="#how-it-works">FastAPI &amp; SQLite WAL</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-column-title">Legal &amp; Safety</div>
+        <ul class="footer-links-list">
+          <li><a href="#faq">Local-First Storage</a></li>
+          <li><a href="#faq">Medical Disclaimers</a></li>
+          <li><a href="#faq">Investment Disclaimers</a></li>
+          <li><a href="#faq">No Data Monetization</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom-bar">
+      <span>&copy; 2026 VAANI. Built with sovereign Indian AI models.</span>
+      <span>Tanish Soni &bull; Gnani AI Challenge</span>
+    </div>
+  </footer>
+
+  <!-- Undo Notification Snackbar (Fixed Overlay) -->
+  <div id="undoSnackbar" class="undo-snackbar" role="alert" aria-live="polite">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="var(--marigold)"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+    <span>Hisaab darj hua (Entry recorded).</span>
+    <div class="undo-timer-progress">
+      <div class="undo-timer-bar"></div>
+    </div>
+    <button id="undoActionBtn" class="undo-action-btn">Undo (हटाएं)</button>
+  </div>
+
+  <!-- JavaScript Application Files -->
+  <script src="js/audio-visualizer.js"></script>
+  <script src="js/voice-simulator.js"></script>
+  <script src="js/landing.js"></script>
+</body>
+</html>
+

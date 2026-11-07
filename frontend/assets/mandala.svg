@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%" fill="none">
+  <defs>
+    <radialGradient id="goldGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFDA66" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#EAAA00" stop-opacity="0.5"/>
+      <stop offset="75%" stop-color="#C48F00" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#EAAA00" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCEECB"/>
+      <stop offset="25%" stop-color="#EAAA00"/>
+      <stop offset="50%" stop-color="#C48F00"/>
+      <stop offset="75%" stop-color="#FFDA73"/>
+      <stop offset="100%" stop-color="#8E5E00"/>
+    </linearGradient>
+    <linearGradient id="aubergineStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3A0F34" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#3A0F34" stop-opacity="0.8"/>
+    </linearGradient>
+    <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Glow Behind Mandala -->
+  <circle cx="250" cy="250" r="230" fill="url(#goldGlow)"/>
+
+  <!-- Outer Concentric Rings with Fine Dots -->
+  <circle cx="250" cy="250" r="215" stroke="url(#goldMetal)" stroke-width="1.2" stroke-dasharray="3 4" opacity="0.6"/>
+  <circle cx="250" cy="250" r="202" stroke="url(#goldMetal)" stroke-width="1" opacity="0.5"/>
+  <circle cx="250" cy="250" r="195" stroke="url(#goldMetal)" stroke-width="1.5" stroke-dasharray="1 5" stroke-linecap="round" opacity="0.75"/>
+  <circle cx="250" cy="250" r="185" stroke="url(#goldMetal)" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Outer 16 Scalloped Petals -->
+  <g stroke="url(#goldMetal)" stroke-width="1.2" opacity="0.7" fill="rgba(234, 170, 0, 0.03)">
+    <!-- 16 rotated petal loops -->
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" />
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(22.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(45 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(67.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(90 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(112.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(135 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(157.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(180 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(202.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(225 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(247.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(270 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(292.5 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(315 250 250)"/>
+    <path d="M 250 45 C 265 65 265 85 250 100 C 235 85 235 65 250 45 Z" transform="rotate(337.5 250 250)"/>
+  </g>
+
+  <!-- Middle Intersecting Arcs Ring -->
+  <circle cx="250" cy="250" r="150" stroke="url(#goldMetal)" stroke-width="1.4" opacity="0.8"/>
+  <circle cx="250" cy="250" r="144" stroke="url(#goldMetal)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.6"/>
+
+  <!-- 12 Ornate Inner Floral Flourishes -->
+  <g stroke="url(#goldMetal)" stroke-width="1.3" opacity="0.85" fill="none">
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" />
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(30 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(60 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(90 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(120 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(150 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(180 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(210 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(240 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(270 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(300 250 250)"/>
+    <path d="M 250 115 Q 268 135 250 160 Q 232 135 250 115 Z" transform="rotate(330 250 250)"/>
+  </g>
+
+  <!-- Inner Radiating Sunburst / Star Ray Pattern -->
+  <g stroke="url(#goldMetal)" stroke-width="1" opacity="0.65">
+    <line x1="250" y1="162" x2="250" y2="185"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(15 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(30 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(45 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(60 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(75 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(90 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(105 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(120 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(135 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(150 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(165 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(180 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(195 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(210 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(225 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(240 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(255 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(270 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(285 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(300 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(315 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(330 250 250)"/>
+    <line x1="250" y1="162" x2="250" y2="185" transform="rotate(345 250 250)"/>
+  </g>
+
+  <!-- Golden Core Framing Ring -->
+  <circle cx="250" cy="250" r="115" stroke="url(#goldMetal)" stroke-width="2" opacity="0.9"/>
+  <circle cx="250" cy="250" r="108" stroke="url(#goldMetal)" stroke-width="1" stroke-dasharray="2 4" opacity="0.75"/>
+  <circle cx="250" cy="250" r="98" stroke="url(#goldMetal)" stroke-width="1.8" opacity="0.85"/>
+</svg>
+

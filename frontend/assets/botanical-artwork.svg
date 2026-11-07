@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Rich gradients for botanical flower -->
+    <radialGradient id="flowerCoreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFDA66" stop-opacity="0.95"/>
+      <stop offset="25%" stop-color="#F58220" stop-opacity="0.8"/>
+      <stop offset="55%" stop-color="#EAAA00" stop-opacity="0.5"/>
+      <stop offset="85%" stop-color="#802050" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3A0F34" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="stamenGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF2A8" stop-opacity="1"/>
+      <stop offset="35%" stop-color="#F58220" stop-opacity="0.85"/>
+      <stop offset="70%" stop-color="#C48F00" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#EAAA00" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Deep Aubergine to Fire Amber petal gradient -->
+    <linearGradient id="petalTop" x1="0.3" y1="1" x2="0.6" y2="0">
+      <stop offset="0%" stop-color="#1A0417"/>
+      <stop offset="25%" stop-color="#380C32"/>
+      <stop offset="50%" stop-color="#6B1848"/>
+      <stop offset="70%" stop-color="#BF4617"/>
+      <stop offset="88%" stop-color="#F58220"/>
+      <stop offset="100%" stop-color="#FFD043"/>
+    </linearGradient>
+
+    <linearGradient id="petalRight" x1="0" y1="0.8" x2="1" y2="0.2">
+      <stop offset="0%" stop-color="#180415"/>
+      <stop offset="30%" stop-color="#3A0F34"/>
+      <stop offset="60%" stop-color="#8F254B"/>
+      <stop offset="82%" stop-color="#E25C18"/>
+      <stop offset="95%" stop-color="#FFB326"/>
+      <stop offset="100%" stop-color="#FFF0A0"/>
+    </linearGradient>
+
+    <linearGradient id="petalLeft" x1="1" y1="0.8" x2="0" y2="0.1">
+      <stop offset="0%" stop-color="#1A0518"/>
+      <stop offset="35%" stop-color="#350C30"/>
+      <stop offset="65%" stop-color="#7B1A4B"/>
+      <stop offset="85%" stop-color="#E6671A"/>
+      <stop offset="98%" stop-color="#FFCA36"/>
+    </linearGradient>
+
+    <linearGradient id="petalBottom" x1="0.5" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#1F051C"/>
+      <stop offset="30%" stop-color="#3D1037"/>
+      <stop offset="65%" stop-color="#9C2E35"/>
+      <stop offset="85%" stop-color="#EAAA00"/>
+      <stop offset="100%" stop-color="#FFD65E"/>
+    </linearGradient>
+
+    <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EAAA00" stop-opacity="0.05"/>
+      <stop offset="20%" stop-color="#EAAA00" stop-opacity="0.4"/>
+      <stop offset="42%" stop-color="#F58220" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#FFDE6A" stop-opacity="1"/>
+      <stop offset="58%" stop-color="#F58220" stop-opacity="0.9"/>
+      <stop offset="80%" stop-color="#EAAA00" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#EAAA00" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <filter id="amberAura" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="25" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="glow"/>
+      <feComposite in="SourceGraphic" in2="glow" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Golden Flame Glow -->
+  <circle cx="500" cy="380" r="280" fill="url(#flowerCoreGlow)" filter="url(#amberAura)"/>
+
+  <!-- Horizontal Audio Waveform Bands (Integrated Behind/Through Flower) -->
+  <g class="waveform-group" fill="url(#waveGradient)">
+    <!-- Mirrored audio frequency bars spanning horizontally across 1000px width -->
+    <!-- Left side waves -->
+    <rect x="30" y="376" width="3" height="8" rx="1.5" opacity="0.3"/>
+    <rect x="42" y="373" width="3" height="14" rx="1.5" opacity="0.35"/>
+    <rect x="54" y="370" width="3" height="20" rx="1.5" opacity="0.4"/>
+    <rect x="66" y="365" width="3.5" height="30" rx="1.7" opacity="0.45"/>
+    <rect x="80" y="360" width="3.5" height="40" rx="1.7" opacity="0.5"/>
+    <rect x="94" y="352" width="3.5" height="56" rx="1.7" opacity="0.55"/>
+    <rect x="108" y="340" width="4" height="80" rx="2" opacity="0.6"/>
+    <rect x="124" y="325" width="4" height="110" rx="2" opacity="0.65"/>
+    <rect x="140" y="310" width="4" height="140" rx="2" opacity="0.7"/>
+    <rect x="156" y="295" width="4.5" height="170" rx="2.2" opacity="0.75"/>
+    <rect x="174" y="280" width="4.5" height="200" rx="2.2" opacity="0.8"/>
+    <rect x="192" y="270" width="5" height="220" rx="2.5" opacity="0.85"/>
+    <rect x="210" y="285" width="5" height="190" rx="2.5" opacity="0.85"/>
+    <rect x="228" y="300" width="5" height="160" rx="2.5" opacity="0.85"/>
+    <rect x="246" y="260" width="5" height="240" rx="2.5" opacity="0.9"/>
+    <rect x="264" y="240" width="5" height="280" rx="2.5" opacity="0.9"/>
+    <rect x="282" y="225" width="5.5" height="310" rx="2.7" opacity="0.95"/>
+    <rect x="302" y="250" width="5.5" height="260" rx="2.7" opacity="0.9"/>
+    <rect x="322" y="230" width="5.5" height="300" rx="2.7" opacity="0.95"/>
+    <rect x="342" y="215" width="6" height="330" rx="3" opacity="0.95"/>
+    <rect x="364" y="240" width="6" height="280" rx="3" opacity="0.9"/>
+    <rect x="386" y="210" width="6" height="340" rx="3" opacity="0.95"/>
+    <rect x="408" y="235" width="6" height="290" rx="3" opacity="0.95"/>
+    <rect x="430" y="200" width="6" height="360" rx="3" opacity="1" filter="url(#softGlow)"/>
+    <rect x="452" y="220" width="6.5" height="320" rx="3.2" opacity="1"/>
+    <rect x="475" y="190" width="7" height="380" rx="3.5" opacity="1" filter="url(#softGlow)"/>
+    
+    <!-- Center Wave Core (Under Flower) -->
+    <rect x="500" y="180" width="7" height="400" rx="3.5" opacity="1" fill="#FFF2A8" filter="url(#softGlow)"/>
+    
+    <!-- Right side waves -->
+    <rect x="525" y="195" width="7" height="370" rx="3.5" opacity="1" filter="url(#softGlow)"/>
+    <rect x="548" y="225" width="6.5" height="310" rx="3.2" opacity="1"/>
+    <rect x="570" y="205" width="6" height="350" rx="3" opacity="1"/>
+    <rect x="592" y="235" width="6" height="290" rx="3" opacity="0.95"/>
+    <rect x="614" y="215" width="6" height="330" rx="3" opacity="0.95"/>
+    <rect x="636" y="245" width="6" height="270" rx="3" opacity="0.9"/>
+    <rect x="658" y="220" width="5.5" height="320" rx="2.7" opacity="0.95"/>
+    <rect x="678" y="240" width="5.5" height="280" rx="2.7" opacity="0.9"/>
+    <rect x="698" y="260" width="5.5" height="240" rx="2.7" opacity="0.9"/>
+    <rect x="718" y="245" width="5" height="270" rx="2.5" opacity="0.85"/>
+    <rect x="736" y="270" width="5" height="220" rx="2.5" opacity="0.85"/>
+    <rect x="754" y="285" width="5" height="190" rx="2.5" opacity="0.8"/>
+    <rect x="772" y="275" width="4.5" height="210" rx="2.2" opacity="0.8"/>
+    <rect x="790" y="295" width="4.5" height="170" rx="2.2" opacity="0.75"/>
+    <rect x="806" y="310" width="4" height="140" rx="2" opacity="0.7"/>
+    <rect x="822" y="325" width="4" height="110" rx="2" opacity="0.65"/>
+    <rect x="838" y="340" width="4" height="80" rx="2" opacity="0.6"/>
+    <rect x="852" y="352" width="3.5" height="56" rx="1.7" opacity="0.55"/>
+    <rect x="866" y="360" width="3.5" height="40" rx="1.7" opacity="0.5"/>
+    <rect x="880" y="365" width="3.5" height="30" rx="1.7" opacity="0.45"/>
+    <rect x="892" y="370" width="3" height="20" rx="1.5" opacity="0.4"/>
+    <rect x="904" y="373" width="3" height="14" rx="1.5" opacity="0.35"/>
+    <rect x="916" y="376" width="3" height="8" rx="1.5" opacity="0.3"/>
+  </g>
+
+  <!-- ========================================================
+       BOTANICAL ORCHID / LILY PETALS (EXQUISITE LAYERED CURVES)
+       ======================================================== -->
+
+  <!-- Back Left Petal -->
+  <path d="M 480 390 C 410 320 330 240 300 150 C 290 120 310 90 350 110 C 420 150 460 260 490 380 Z" 
+        fill="url(#petalLeft)" opacity="0.94" filter="url(#softGlow)"/>
+  
+  <!-- Back Right Petal -->
+  <path d="M 520 380 C 580 300 680 200 740 120 C 770 80 800 110 780 150 C 740 230 630 310 530 390 Z" 
+        fill="url(#petalRight)" opacity="0.92" filter="url(#softGlow)"/>
+
+  <!-- Top Center Petal (Majestic upward curl) -->
+  <path d="M 470 380 C 440 280 430 160 470 60 C 485 20 515 20 530 60 C 560 150 560 270 530 380 Z" 
+        fill="url(#petalTop)" opacity="0.96"/>
+  <!-- Top Petal Glowing Rib / Spine -->
+  <path d="M 500 360 C 495 240 490 140 500 60" stroke="#FFD65E" stroke-width="2.5" opacity="0.75" stroke-linecap="round"/>
+  <path d="M 500 360 C 495 240 490 140 500 60" stroke="#FFF2A8" stroke-width="1.2" opacity="0.9" stroke-linecap="round"/>
+
+  <!-- Left Lateral Petal (Broad curling wing) -->
+  <path d="M 470 410 C 360 410 240 360 170 310 C 130 280 150 250 200 260 C 290 280 390 340 480 400 Z" 
+        fill="url(#petalLeft)" opacity="0.97"/>
+  <!-- Left Petal Spine -->
+  <path d="M 460 400 C 360 370 270 330 190 280" stroke="#FFAC26" stroke-width="2" opacity="0.7" stroke-linecap="round"/>
+
+  <!-- Right Lateral Petal (Curling downwards-right) -->
+  <path d="M 530 400 C 640 410 750 430 820 480 C 860 510 850 540 800 530 C 700 510 610 460 520 410 Z" 
+        fill="url(#petalRight)" opacity="0.96"/>
+  <!-- Right Petal Spine -->
+  <path d="M 530 410 C 640 440 730 480 810 515" stroke="#FFA51E" stroke-width="2" opacity="0.7" stroke-linecap="round"/>
+
+  <!-- Bottom Left Descending Petal -->
+  <path d="M 480 410 C 430 490 350 590 280 660 C 250 690 220 670 240 630 C 280 550 380 470 470 420 Z" 
+        fill="url(#petalBottom)" opacity="0.95"/>
+  <!-- Bottom Left Spine -->
+  <path d="M 470 430 C 390 510 320 590 260 640" stroke="#FFCA36" stroke-width="2" opacity="0.75" stroke-linecap="round"/>
+
+  <!-- Bottom Right Flowing Petal -->
+  <path d="M 520 420 C 560 510 590 610 580 720 C 575 760 545 760 530 720 C 510 620 490 520 510 430 Z" 
+        fill="url(#petalBottom)" opacity="0.98"/>
+  <!-- Bottom Center Spine -->
+  <path d="M 515 430 C 525 530 545 630 555 720" stroke="#FFDF6A" stroke-width="2.5" opacity="0.8" stroke-linecap="round"/>
+
+  <!-- ========================================================
+       BLAZING GOLDEN STAMEN, PISTIL & POLLEN PARTICLES (CENTER)
+       ======================================================== -->
+
+  <g id="flowerStamen">
+    <!-- Center Core Fire Light -->
+    <ellipse cx="500" cy="400" rx="45" ry="35" fill="url(#stamenGlow)" filter="url(#softGlow)"/>
+
+    <!-- Filament 1 (Arching Top-Left) -->
+    <path d="M 495 405 C 470 360 450 310 440 270" stroke="#FFDE6A" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="438" cy="265" r="7" fill="#FFF2A8" filter="url(#softGlow)"/>
+    <circle cx="438" cy="265" r="4.5" fill="#EAAA00"/>
+
+    <!-- Filament 2 (Arching Top-Center) -->
+    <path d="M 502 400 C 495 340 500 280 508 230" stroke="#FFDF73" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="509" cy="225" r="8.5" fill="#FFF8C9" filter="url(#softGlow)"/>
+    <circle cx="509" cy="225" r="5" fill="#F58220"/>
+
+    <!-- Filament 3 (Arching Top-Right) -->
+    <path d="M 508 405 C 530 350 565 305 590 260" stroke="#FFDE6A" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="594" cy="254" r="7.5" fill="#FFF2A8" filter="url(#softGlow)"/>
+    <circle cx="594" cy="254" r="5" fill="#EAAA00"/>
+
+    <!-- Filament 4 (Arching Lower-Left) -->
+    <path d="M 492 410 C 460 430 420 460 390 480" stroke="#FFC936" stroke-width="2.8" stroke-linecap="round"/>
+    <circle cx="385" cy="484" r="6.5" fill="#FFE58F" filter="url(#softGlow)"/>
+    <circle cx="385" cy="484" r="4" fill="#C48F00"/>
+
+    <!-- Filament 5 (Arching Lower-Right) -->
+    <path d="M 506 412 C 540 435 580 470 610 500" stroke="#FFC936" stroke-width="2.8" stroke-linecap="round"/>
+    <circle cx="615" cy="505" r="6.5" fill="#FFE58F" filter="url(#softGlow)"/>
+    <circle cx="615" cy="505" r="4" fill="#C48F00"/>
+
+    <!-- Golden Pollen Sparks -->
+    <circle cx="475" cy="320" r="2.5" fill="#FFF8C9" opacity="0.9"/>
+    <circle cx="530" cy="310" r="3" fill="#FFDE6A" opacity="0.85"/>
+    <circle cx="460" cy="290" r="2" fill="#FFDF73" opacity="0.8"/>
+    <circle cx="550" cy="280" r="2" fill="#FFF2A8" opacity="0.8"/>
+    <circle cx="485" cy="245" r="3.2" fill="#FFE799" opacity="0.95" filter="url(#softGlow)"/>
+    <circle cx="525" cy="240" r="2.2" fill="#FFD043" opacity="0.85"/>
+    <circle cx="430" cy="350" r="2.5" fill="#FFC936" opacity="0.75"/>
+    <circle cx="570" cy="360" r="3" fill="#FFDE6A" opacity="0.8"/>
+  </g>
+</svg>
+

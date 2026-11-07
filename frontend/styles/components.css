@@ -1,0 +1,243 @@
+/* ==========================================================================
+   VAANI — SPECIALIZED INTERACTIVE COMPONENTS
+   Ledger Sheets, Parchi Prescriptions, Sensex Graphs, Mic Visualizers
+   ========================================================================== */
+
+/* 1. Indian Bahi-Khata Ledger Sheet Component */
+.bahi-khata-sheet {
+  background: var(--surface-ledger);
+  position: relative;
+  border: 1px solid rgba(58, 15, 52, 0.16);
+  border-radius: var(--radius-md);
+  box-shadow: 
+    0 1px 3px rgba(58, 15, 52, 0.05),
+    0 12px 32px rgba(58, 15, 52, 0.08);
+  overflow: hidden;
+}
+
+/* Red/Aubergine Ledger Margin Line */
+.bahi-khata-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 56px;
+  width: 1.5px;
+  background-color: rgba(166, 58, 46, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.khata-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px dashed rgba(58, 15, 52, 0.1);
+  transition: background var(--dur-fast);
+}
+
+.khata-row:hover {
+  background-color: rgba(234, 170, 0, 0.06);
+}
+
+.khata-row.credit .entry-amount {
+  color: var(--danger);
+}
+
+.khata-row.payment .entry-amount {
+  color: var(--success);
+}
+
+/* 2. Parchi (Digital Prescription Slip) Component */
+.parchi-slip {
+  background: #FFFFFF;
+  border: 1px solid rgba(58, 15, 52, 0.14);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Perforated Top Edge */
+.parchi-perforated-edge {
+  height: 8px;
+  background-image: radial-gradient(circle, transparent 4px, #FFFFFF 4px);
+  background-size: 14px 14px;
+  background-position: -7px -7px;
+  border-bottom: 1px dashed rgba(58, 15, 52, 0.2);
+}
+
+.rx-stamp {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 700;
+  color: var(--aubergine);
+  opacity: 0.9;
+}
+
+.dose-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--marigold-100);
+  color: var(--aubergine);
+  border: 1px solid var(--marigold);
+}
+
+.doctor-disclaimer-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* 3. Sensex Financial Chart Component */
+.sensex-candle-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 90px;
+  padding-top: 10px;
+}
+
+.candle-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background-color: var(--aubergine);
+  position: relative;
+  transition: height var(--dur-normal) var(--ease-out);
+}
+
+.candle-bar::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 8px;
+  background-color: inherit;
+  opacity: 0.7;
+}
+
+.candle-bar.up {
+  background: linear-gradient(180deg, var(--marigold) 0%, var(--amber-flame) 100%);
+}
+
+.candle-bar.down {
+  background: var(--aubergine);
+}
+
+/* 4. Audio Visualizer Canvas & Reactive Waveforms */
+.audio-canvas-wrap {
+  width: 100%;
+  height: 60px;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: rgba(58, 15, 52, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waveform-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* 5. Undo Snackbar Component */
+.undo-snackbar {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--aubergine-900);
+  color: #FFFFFF;
+  padding: 14px 24px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--marigold);
+  box-shadow: 0 10px 32px rgba(58, 15, 52, 0.45), 0 0 20px var(--gold-glow);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  z-index: 1000;
+  opacity: 0;
+  transition: all var(--dur-normal) var(--ease-out);
+}
+
+.undo-snackbar.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.undo-action-btn {
+  background: var(--marigold);
+  color: var(--aubergine);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-fast);
+}
+
+.undo-action-btn:hover {
+  background: #FFFFFF;
+}
+
+.undo-timer-progress {
+  width: 30px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.undo-timer-bar {
+  width: 100%;
+  height: 100%;
+  background: var(--marigold);
+  animation: timerCountdown 8s linear forwards;
+}
+
+@keyframes timerCountdown {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* 6. Sound Waves Ripples (Mic Active State) */
+.mic-ripple-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid var(--marigold);
+  pointer-events: none;
+  animation: micRippleExpand 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.mic-ripple-ring:nth-child(2) {
+  animation-delay: 0.6s;
+}
+
+.mic-ripple-ring:nth-child(3) {
+  animation-delay: 1.2s;
+}
+
+@keyframes micRippleExpand {
+  0% {
+    width: 100px;
+    height: 100px;
+    opacity: 0.9;
+  }
+  100% {
+    width: 220px;
+    height: 220px;
+    opacity: 0;
+  }
+}
+
