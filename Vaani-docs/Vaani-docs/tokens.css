@@ -1,0 +1,107 @@
+/* Munimji design tokens — see design.md
+   Primary background: Ice Silver  #DDE3E8
+   Secondary / ink:    Deep Aubergine #3A0F34
+   Highlight:          Marigold    #EAAA00
+   Marigold is a FILL or large shape with aubergine content on top. Never small marigold text on silver (≈1.6:1). */
+
+:root {
+  /* Brand */
+  --ice-silver: #DDE3E8;
+  --aubergine: #3A0F34;
+  --marigold: #EAAA00;
+
+  /* Derived tints */
+  --ice-50: #EEF1F4;
+  --ice-200: #CBD3DA;
+  --ice-400: #A9B4BE;
+  --aubergine-70: #6B4A66;
+  --aubergine-900: #2A0A26;
+  --marigold-600: #C48F00;
+  --marigold-100: #F6E3A6;
+
+  /* Functional */
+  --danger: #A63A2E;
+
+  /* Roles */
+  --bg: var(--ice-silver);
+  --surface: var(--ice-50);
+  --text: var(--aubergine);
+  --text-muted: var(--aubergine-70);
+  --accent: var(--marigold);
+  --accent-pressed: var(--marigold-600);
+  --border: var(--ice-200);
+  --on-accent: var(--aubergine);
+
+  /* Type */
+  --font-display: "Fraunces", "Noto Serif Devanagari", Georgia, serif;
+  --font-body: "Noto Sans", "Noto Sans Devanagari", system-ui, sans-serif;
+
+  /* Shape and space */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-pill: 999px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px;
+  --shadow: 0 8px 24px rgba(58, 15, 52, 0.12);
+
+  /* Motion */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --dur-card: 220ms;
+}
+
+/* Night-shop mode (stretch) */
+:root[data-theme="night"] {
+  --bg: var(--aubergine-900);
+  --surface: var(--aubergine);
+  --text: var(--ice-silver);
+  --text-muted: var(--ice-400);
+  --border: #5A3454;
+  --on-accent: var(--aubergine);
+}
+
+html { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; }
+body { margin: 0; line-height: 1.5; }
+[lang="hi"], [lang="mr"] { line-height: 1.6; }
+h1, h2, .display { font-family: var(--font-display); font-weight: 600; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Focus ring visible on both silver and aubergine */
+:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--aubergine);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+}
+
+.chip-balance {
+  background: var(--marigold);
+  color: var(--on-accent);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-4);
+  font-size: 40px; line-height: 44px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.bubble-munimji {
+  background: var(--surface);
+  border-left: 4px solid var(--marigold);
+  border-radius: 20px 20px 20px 4px;
+  padding: var(--space-3) var(--space-4);
+}
+.bubble-user {
+  background: var(--aubergine);
+  color: var(--ice-silver);
+  border-radius: 20px 20px 4px 20px;
+  padding: var(--space-3) var(--space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
