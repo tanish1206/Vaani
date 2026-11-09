@@ -32,10 +32,9 @@
   function setSvgTransform(el, cx, cy, s, rot) {
     if (!el) return;
     const r = rot || 0;
-    const t = 'translate(' + cx + ',' + cy + ') scale(' + s.toFixed(4) + ') rotate(' + r.toFixed(2) + ') translate(' + (-cx) + ',' + (-cy) + ')';
+    const t = 'translate(' + cx + ' ' + cy + ') scale(' + s.toFixed(4) + ') rotate(' + r.toFixed(2) + ') translate(' + (-cx) + ' ' + (-cy) + ')';
     el.setAttribute('transform', t);
-    el.style.transformOrigin = cx + 'px ' + cy + 'px';
-    el.style.transform = 'scale(' + s.toFixed(4) + ') rotate(' + r.toFixed(2) + 'deg)';
+    el.style.transform = '';
   }
 
   function setSvgOpacity(el, op) {
@@ -244,6 +243,12 @@
       } else if (Math.abs(diff) > 0) {
         this.currentProgress = this.targetProgress;
         this.renderStage(this.currentProgress);
+      } else if (this.currentProgress < 0.25 && this.seedAura) {
+        // Subtle ambient pulse for the dormant seed at rest
+        const pulse = 0.65 + 0.35 * Math.sin(Date.now() * 0.0035);
+        const seedWarmth = smoothstep(0, 0.14, this.currentProgress);
+        const auraOp = (0.5 + 0.5 * seedWarmth) * pulse;
+        setSvgOpacity(this.seedAura, auraOp);
       }
 
       // Sample live microphone amplitude
@@ -641,7 +646,15 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    window.vaaniBlossomHero = new BotanicalBlossomHero();
-  });
+  function initHero() {
+    if (!window.vaaniBlossomHero) {
+      window.vaaniBlossomHero = new BotanicalBlossomHero();
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHero);
+  } else {
+    initHero();
+  }
 })();

@@ -319,63 +319,68 @@ button {
   pointer-events: none;
 }
 
-/* Organic Stem */
-#stemPath, #stemShadowPath, #stemHighlightPath {
-  will-change: stroke-dashoffset;
-  transition: stroke-dashoffset 0.04s linear;
+/* ==========================================================================
+   BOTANICAL BLOSSOM — INITIAL STAGE 1 (SEED ONLY) ARCHITECTURE
+   All stem, foliage, bud, corolla petals, stamens, and waveforms
+   start completely dormant and hidden until scroll-scrubbed.
+   ========================================================================== */
+
+/* Organic Stem — Initially Hidden with full dashoffset */
+#stemPath,
+#stemShadowPath,
+#stemHighlightPath {
+  stroke-dasharray: 520 520;
+  stroke-dashoffset: 520;
+  opacity: 0;
+  will-change: stroke-dashoffset, opacity;
 }
 
 /* Botanical Branches */
 .botanical-branch-assembly path {
-  will-change: stroke-dashoffset;
-  transition: stroke-dashoffset 0.04s linear;
+  opacity: 0;
+  will-change: stroke-dashoffset, opacity;
 }
 
-/* Botanical Leaves */
+/* Botanical Leaves — Hidden at Stage 1 */
 .botanical-leaf {
-  transform-box: fill-box;
+  opacity: 0;
   will-change: transform, opacity;
-  transition: transform 0.06s linear, opacity 0.08s linear;
 }
 
-/* Multi-Tiered Controllable Petals */
-.flower-petal {
-  transform-box: view-box;
-  will-change: transform, opacity;
-  transition: transform 0.06s linear, opacity 0.08s linear;
-}
-
+/* Multi-Tiered Controllable Petals — Hidden at Stage 1 */
+.flower-petal,
+.petal-outer,
+.petal-mid,
 .petal-tier-inner path {
-  transform-box: view-box;
+  opacity: 0;
   will-change: transform, opacity;
-  transition: transform 0.06s linear, opacity 0.08s linear;
 }
 
 /* Calyx & Bud Sepals */
+.botanical-bracts,
 .botanical-bud-cluster {
+  opacity: 0;
   will-change: transform, opacity;
-  transition: transform 0.06s linear, opacity 0.08s linear;
 }
 
 #sepalLeft, #sepalRight {
   will-change: transform;
-  transition: transform 0.06s linear;
 }
 
 /* Flower Center & Waveform Bands */
 .botanical-center-group {
+  opacity: 0;
   will-change: opacity, transform;
-  transition: opacity 0.1s linear, transform 0.1s linear;
 }
 
 .acoustic-sound-rings {
+  opacity: 0;
   will-change: opacity, transform;
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
 }
 
 .botanical-waveform-ribbon {
+  opacity: 0;
   will-change: opacity;
-  transition: opacity 0.15s ease-out;
 }
 
 .hero-fallback-art {
@@ -401,7 +406,7 @@ button {
   pointer-events: none;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 88px 48px 40px;
+  padding: 80px 48px 32px;
 }
 
 .hero-overlay-content a,
@@ -417,10 +422,29 @@ button {
   min-height: 0;
 }
 
-.hero-seed-label {
+/* Unified Left Architectural Editorial Column */
+.hero-editorial-column {
   position: absolute;
-  top: 8%;
-  left: 4%;
+  top: clamp(48px, 8vh, 88px);
+  left: clamp(16px, 4vw, 56px);
+  bottom: clamp(24px, 5vh, 48px);
+  width: min(540px, 48vw);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(12px, 2vh, 22px);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.hero-editorial-column > * {
+  pointer-events: auto;
+}
+
+.hero-seed-label {
+  position: relative;
+  margin: 0;
   z-index: 4;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -429,43 +453,52 @@ button {
   color: var(--text-subtle);
 }
 
-/* Giant Editorial Headlines */
+/* Grouped Title Lockup — Impossible to collide */
+.hero-title-lockup {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 0.92;
+  margin: 0;
+  padding: 0;
+}
+
 .headline-boliye {
-  position: absolute;
-  top: 12%;
-  left: 3%;
+  position: relative;
+  margin: 0;
+  padding: 0;
   z-index: 3;
   font-family: var(--font-display);
-  font-size: clamp(68px, 9.5vw, 126px);
+  font-size: clamp(52px, 7.2vw, 108px);
   font-weight: 700;
   color: var(--aubergine);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
   text-shadow: 0 4px 30px rgba(58, 15, 52, 0.08);
 }
 
 .headline-vaani {
-  position: absolute;
-  bottom: 28%;
-  left: 4%;
+  position: relative;
+  margin: 0;
+  padding: 0;
   z-index: 3;
   font-family: var(--font-display);
-  font-size: clamp(74px, 10.5vw, 138px);
+  font-size: clamp(56px, 7.8vw, 118px);
   font-weight: 700;
   color: var(--aubergine);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
   text-shadow: 0 4px 30px rgba(58, 15, 52, 0.08);
 }
 
 /* Supporting Tagline Under Vaani */
 .hero-supporting-copy {
-  position: absolute;
-  bottom: 16%;
-  left: 4.5%;
+  position: relative;
+  margin: 0;
   z-index: 4;
-  max-width: 420px;
-  font-size: 16.5px;
+  max-width: 440px;
+  font-size: clamp(15px, 1.25vw, 18px);
   line-height: 1.5;
   color: var(--text-muted);
   font-weight: 500;
@@ -478,36 +511,34 @@ button {
 
 /* Hero Action CTAs (Left Side) */
 .hero-cta-group {
-  position: absolute;
-  bottom: 7%;
-  left: 4%;
+  position: relative;
+  margin: 4px 0 0;
   z-index: 4;
   display: flex;
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 16px;
 }
 
 .hero-waveform-dock {
-  position: absolute;
-  right: 5%;
-  bottom: 10%;
+  position: relative;
+  margin: 2px 0 0;
   z-index: 4;
-  width: min(280px, 36vw);
+  width: min(280px, 100%);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-items: flex-end;
+  gap: 6px;
+  align-items: flex-start;
 }
 
 .hero-waveform-dock .waveform-canvas {
   width: 100%;
-  height: 48px;
+  height: 42px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.45);
   border: 1px solid rgba(58, 15, 52, 0.1);
-  box-shadow: 0 8px 28px rgba(58, 15, 52, 0.08);
+  box-shadow: 0 6px 20px rgba(58, 15, 52, 0.06);
 }
 
 .hero-waveform-caption {
@@ -520,9 +551,9 @@ button {
 
 [data-blossom-reveal] {
   --blossom-reveal: 0;
-  opacity: calc(var(--blossom-reveal) * 0.98);
-  transform: translate3d(0, calc((1 - var(--blossom-reveal)) * 28px), 0);
-  filter: blur(calc((1 - var(--blossom-reveal)) * 8px));
+  opacity: var(--blossom-reveal);
+  transform: translateY(calc((1 - var(--blossom-reveal)) * 22px));
+  filter: blur(calc((1 - var(--blossom-reveal)) * 6px));
   will-change: opacity, transform, filter;
 }
 
@@ -655,25 +686,9 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-blossom-track {
-    height: auto;
-  }
-
-  .hero-blossom-sticky {
-    position: relative;
-    height: auto;
-    min-height: 720px;
-  }
-
-  [data-blossom-reveal] {
-    opacity: 1 !important;
-    transform: none !important;
-    filter: none !important;
-  }
-
   .hero-scroll-hint,
   .hero-scroll-hint-line {
-    display: none;
+    opacity: 0.6;
   }
 
   .reveal-on-scroll,
@@ -682,10 +697,7 @@ button {
   .sensex-chart-bar,
   .parchi-med-row,
   .parchi-ruled-line {
-    opacity: 1 !important;
-    transform: none !important;
-    animation: none !important;
-    transition: none !important;
+    transition-duration: 0.05s !important;
   }
 }
 
@@ -763,23 +775,26 @@ button {
   position: relative;
   z-index: 4;
   width: 100%;
-  max-width: 1240px;
-  margin: -24px auto 0;
-  padding: 0 48px 40px;
-  min-height: 640px;
+  max-width: 1280px;
+  margin: -40px auto 0;
+  padding: 0 clamp(16px, 3vw, 40px) 48px;
+  min-height: auto;
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
+  gap: clamp(16px, 2.5vw, 36px);
 }
 
 /* 1. Central Phone Mockup */
 .mockup-phone-frame {
   position: relative;
   z-index: 10;
-  width: 320px;
-  height: 620px;
+  flex: 0 0 300px;
+  width: 300px;
+  height: 590px;
   background: linear-gradient(175deg, #F8F6F2 0%, #D8DFE5 100%);
-  border-radius: 46px;
+  border-radius: 44px;
   padding: 12px;
   box-shadow: 
     0 24px 70px rgba(58, 15, 52, 0.22),
@@ -936,11 +951,12 @@ button {
 
 /* 2. Overlapping Left Card — Bol-Khata (Traditional Bahi-Khata Ledger) */
 .mockup-card-khata {
-  position: absolute;
-  left: 4%;
-  bottom: 30px;
+  position: relative;
   z-index: 8;
-  width: 360px;
+  flex: 1 1 340px;
+  max-width: 380px;
+  min-width: 280px;
+  width: 100%;
   background: var(--surface-ledger);
   border-radius: 22px;
   padding: 24px;
@@ -1048,19 +1064,29 @@ button {
   color: var(--marigold-600);
 }
 
-/* 3. Overlapping Right Card (Top) — Parchi (Digital Prescription & Reminders) */
-.mockup-card-parchi {
-  position: absolute;
-  right: 5%;
-  top: 10px;
+/* Right Column: Parchi (Top) & Sensex Awaaz (Bottom) Stack */
+.showcase-right-cards {
+  position: relative;
   z-index: 8;
-  width: 320px;
+  flex: 1 1 340px;
+  max-width: 380px;
+  min-width: 280px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 3. Right Column Card (Top) — Parchi (Digital Prescription & Reminders) */
+.mockup-card-parchi {
+  position: relative;
+  width: 100%;
   background: #FFFFFF;
   border-radius: 20px;
   padding: 22px;
   border: 1px solid rgba(58, 15, 52, 0.14);
   box-shadow: var(--shadow-lg);
-  transform: rotate(2deg);
+  transform: rotate(1.5deg);
   transition: transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal);
 }
 
@@ -1142,13 +1168,10 @@ button {
   border-top: 1px dashed rgba(58, 15, 52, 0.15);
 }
 
-/* 4. Overlapping Right Card (Bottom) — Sensex Awaaz */
+/* 4. Right Column Card (Bottom) — Sensex Awaaz */
 .mockup-card-sensex {
-  position: absolute;
-  right: 2%;
-  bottom: 15px;
-  z-index: 9;
-  width: 330px;
+  position: relative;
+  width: 100%;
   background: #FFFFFF;
   border-radius: 20px;
   padding: 22px;
@@ -2053,19 +2076,29 @@ button {
   .hero-blossom-track {
     height: 220vh;
   }
+  .hero-editorial-column {
+    width: min(480px, 52vw);
+  }
   .showcase-stage {
     min-height: auto;
     flex-direction: column;
+    align-items: center;
     gap: 32px;
     padding: 0 24px 40px;
   }
   .mockup-card-khata,
-  .mockup-card-parchi,
-  .mockup-card-sensex {
-    position: static;
-    transform: none !important;
+  .showcase-right-cards {
     width: 100%;
     max-width: 440px;
+    transform: none !important;
+  }
+  .mockup-card-parchi,
+  .mockup-card-sensex {
+    transform: none !important;
+  }
+  .mockup-phone-frame {
+    width: 290px;
+    height: 560px;
   }
   .voice-lab-card {
     grid-template-columns: 1fr;
@@ -2113,39 +2146,31 @@ button {
     padding: 64px 20px 28px;
   }
 
-  .hero-seed-label {
-    top: 4%;
-    left: 0;
+  .hero-editorial-column {
+    top: auto;
+    bottom: 24px;
+    left: 18px;
+    right: 18px;
+    width: auto;
+    max-width: none;
+    gap: 12px;
   }
 
   .headline-boliye {
-    top: auto;
-    bottom: 42%;
-    left: 0;
-    right: 0;
-    font-size: clamp(48px, 14vw, 64px);
-    text-align: left;
+    font-size: clamp(40px, 11vw, 56px);
   }
 
   .headline-vaani {
-    bottom: 30%;
-    left: 0;
-    font-size: clamp(52px, 15vw, 72px);
+    font-size: clamp(44px, 12vw, 64px);
   }
 
   .hero-supporting-copy {
-    bottom: 18%;
-    left: 0;
-    max-width: 100%;
-    font-size: 15px;
+    font-size: 14.5px;
   }
 
   .hero-cta-group {
-    bottom: 6%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    gap: 12px;
   }
 
   .hero-waveform-dock {
