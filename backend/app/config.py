@@ -80,7 +80,7 @@ class Settings(BaseSettings):
         return bool(self.GNANI_API_KEY and self.GNANI_API_KEY.strip())
 
     def is_evon_configured(self) -> bool:
-        return bool(self.EVON_ENABLED and self.EVON_BASE_URL and self.EVON_BASE_URL.strip())
+        return bool(self.EVON_ENABLED and self.EVON_BASE_URL and self.EVON_BASE_URL.strip() and self.EVON_API_KEY and self.EVON_API_KEY.strip())
 
     def is_timbre_configured(self) -> bool:
         return bool(self.GNANI_API_KEY and self.GNANI_API_KEY.strip())
