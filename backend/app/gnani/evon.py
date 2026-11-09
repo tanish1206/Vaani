@@ -58,7 +58,7 @@ class EvonParser:
             }
 
         # If Evon service is configured and enabled, try live inference
-        if settings.EVON_ENABLED and settings.EVON_BASE_URL:
+        if settings.is_evon_configured():
             try:
                 res = await cls._call_evon_live(transcript)
                 if res and "actions" in res:
