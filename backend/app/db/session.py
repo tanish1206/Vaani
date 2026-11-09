@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Generator
 from contextlib import contextmanager
 
-from app.config import settings
+from app.config import settings, BASE_DIR
 
-DB_FILE = Path(settings.DB_PATH)
+raw_db_path = Path(settings.DB_PATH)
+DB_FILE = raw_db_path if raw_db_path.is_absolute() else (BASE_DIR / raw_db_path)
 SCHEMA_FILE = Path(__file__).resolve().parent / "schema.sql"
 
 def get_connection() -> sqlite3.Connection:
