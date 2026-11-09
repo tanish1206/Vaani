@@ -16,7 +16,7 @@
       navParchi: "Parchi",
       navBazaar: "Sensex Awaaz",
       navSettings: "Settings",
-      heroHeadlineBoliye: "Boliye,",
+      heroHeadlineBoliye: "Boliye.",
       heroHeadlineVaani: "Vaani",
       heroCopy: "Apne kaam, hisaab aur zaroori jaankari — ab sirf apni awaaz se.",
       startSpeaking: "Start Speaking",
@@ -32,7 +32,7 @@
       navParchi: "पर्ची",
       navBazaar: "सेंसेक्स आवाज़",
       navSettings: "सेटिंग्स",
-      heroHeadlineBoliye: "बोलिए,",
+      heroHeadlineBoliye: "बोलिए।",
       heroHeadlineVaani: "वाणी",
       heroCopy: "अपने काम, हिसाब और ज़रूरी जानकारी — अब सिर्फ़ अपनी आवाज़ से।",
       startSpeaking: "बोलना शुरू करें",
@@ -48,7 +48,7 @@
       navParchi: "चिट्ठी (पर्ची)",
       navBazaar: "सेन्सेक्स आवाज",
       navSettings: "सेटिंग्ज",
-      heroHeadlineBoliye: "बोला,",
+      heroHeadlineBoliye: "बोला.",
       heroHeadlineVaani: "वाणी",
       heroCopy: "आपली कामे, हिशोब आणि महत्त्वाची माहिती — आता फक्त आपल्या आवाजाने.",
       startSpeaking: "बोलायला सुरुवात करा",
@@ -68,6 +68,7 @@
       this.initLanguageTabs();
       this.initHeaderScroll();
       this.initVisualizer();
+      this.initScrollReveals();
     }
 
     initTheme() {
@@ -114,6 +115,7 @@
       this.updateText('heroHeadlineVaani', dict.heroHeadlineVaani);
       this.updateText('heroSupportingCopy', dict.heroCopy);
       this.updateText('heroVoiceBtnText', dict.startSpeaking);
+      this.updateText('heroWatchDemoText', dict.watchDemo);
       this.updateText('finalCtaTitle', dict.finalCtaTitle);
       this.updateText('finalCtaTagline', dict.finalCtaTagline);
       this.updateText('finalCtaBtnText', dict.finalCtaBtn);
@@ -171,8 +173,43 @@
 
     initVisualizer() {
       if (window.AudioWaveformVisualizer) {
-        new window.AudioWaveformVisualizer('heroAudioCanvas');
+        window.vaaniVisualizer = new window.AudioWaveformVisualizer('heroAudioCanvas');
       }
+    }
+
+    initScrollReveals() {
+      const targets = document.querySelectorAll(
+        '.showcase-stage .mockup-card-khata, .showcase-stage .mockup-card-parchi, .showcase-stage .mockup-card-sensex, .showcase-stage .mockup-phone-frame, #voice-lab, #modules, #how-it-works, #faq, .final-cta-section, .languages-tab-wrapper, .pipeline-diagram, .modules-grid'
+      );
+
+      targets.forEach((el) => {
+        el.classList.add('reveal-on-scroll');
+        if (
+          el.classList.contains('modules-grid') ||
+          el.classList.contains('pipeline-diagram')
+        ) {
+          el.classList.add('stagger-children');
+        }
+      });
+
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach((el) => el.classList.add('is-inview'));
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-inview');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.18, rootMargin: '0px 0px -8% 0px' }
+      );
+
+      targets.forEach((el) => observer.observe(el));
     }
   }
 
