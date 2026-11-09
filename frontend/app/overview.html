@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAANI — Application Central Overview</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23EAAA00'/><text x='50' y='65' font-size='52' font-family='serif' font-weight='bold' fill='%233A0F34' text-anchor='middle'>व</text></svg>">
+  
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/app-shell.css">
+  <link rel="stylesheet" href="/styles/agent-component.css">
+</head>
+<body>
+
+  <!-- GLOBAL APPLICATION TOPBAR -->
+  <header class="global-topbar">
+    <div class="topbar-brand-area">
+      <a href="/" class="brand-logo-link">VAANI</a>
+      <span class="brand-tagline-chip">Boliye. Vaani Sambhal Legi.</span>
+    </div>
+
+    <nav class="topbar-nav-links">
+      <a href="/app" class="topbar-nav-item active">Overview</a>
+      <a href="/app/bol-khata" class="topbar-nav-item">Bol-Khata</a>
+      <a href="/app/parchi" class="topbar-nav-item">Parchi</a>
+      <a href="/app/sensex-awaaz" class="topbar-nav-item">Sensex Awaaz</a>
+      <a href="/app/settings" class="topbar-nav-item">Settings</a>
+    </nav>
+
+    <div class="topbar-utility-actions">
+      <a href="/" class="utility-chip-btn">&larr; Landing Page</a>
+      <a href="/app/settings" class="utility-chip-btn">⚙️ Diagnostics</a>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="page-workspace-container">
+    
+    <!-- LEFT: MAIN OVERVIEW CONTENT -->
+    <main class="workspace-main-panel">
+      <!-- Title Banner -->
+      <div class="page-title-banner">
+        <div>
+          <h1 class="page-title-heading">Namaste! Vaani Hub</h1>
+          <p class="page-subtitle-text">
+            Apna vyapaar hisaab, parivaar ki dawa, aur bazaar briefings — sab ek jagah.
+          </p>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 12px; font-weight: 700; background: var(--marigold-100); color: var(--aubergine); border: 1px solid var(--marigold); padding: 4px 12px; border-radius: var(--radius-pill);">
+            Sovereign Indian AI Active
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Strip -->
+      <div class="stats-cards-grid">
+        <div class="stat-card">
+          <div class="stat-card-label">Total Udhaar Baaki</div>
+          <div id="overview-total-balance" class="stat-card-value">&#8377;--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Today's Collections</div>
+          <div id="overview-today-collected" class="stat-card-value">&#8377;0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Active Doses Today</div>
+          <div id="overview-doses-count" class="stat-card-value">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">BSE Sensex</div>
+          <div id="overview-sensex-val" class="stat-card-value" style="font-size: 22px;">83,410.20</div>
+        </div>
+      </div>
+
+      <!-- Module Gateway Cards (3 Dedicated Workspaces) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        
+        <!-- 1. Bol-Khata Card -->
+        <div class="content-box-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 24px;">📒</span>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--marigold-600); background: var(--marigold-100); padding: 2px 8px; border-radius: var(--radius-pill);">
+                Ledger
+              </span>
+            </div>
+            <h3 style="font-family: var(--font-display); font-size: 22px; color: var(--aubergine); margin-bottom: 8px;">Bol-Khata</h3>
+            <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+              Grahak hisaab, udhaar aur jama darj karein. Integer-paise precision, fuzzy name match aur 8-second voice undo.
+            </p>
+          </div>
+          <a href="/app/bol-khata" class="btn-primary-action" style="text-decoration: none; text-align: center;">
+            Open Bol-Khata Workspace &rarr;
+          </a>
+        </div>
+
+        <!-- 2. Parchi Card -->
+        <div class="content-box-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 24px;">💊</span>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--marigold-600); background: var(--marigold-100); padding: 2px 8px; border-radius: var(--radius-pill);">
+                Prescriptions
+              </span>
+            </div>
+            <h3 style="font-family: var(--font-display); font-size: 22px; color: var(--aubergine); margin-bottom: 8px;">Parchi</h3>
+            <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+              Ghar ke bado aur parivaar ki dawa schedules. Subah, shaam aur khane ke baad ke automatic reminders.
+            </p>
+          </div>
+          <a href="/app/parchi" class="btn-primary-action" style="text-decoration: none; text-align: center;">
+            Open Parchi Workspace &rarr;
+          </a>
+        </div>
+
+        <!-- 3. Sensex Awaaz Card -->
+        <div class="content-box-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 24px;">📈</span>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--marigold-600); background: var(--marigold-100); padding: 2px 8px; border-radius: var(--radius-pill);">
+                Markets
+              </span>
+            </div>
+            <h3 style="font-family: var(--font-display); font-size: 22px; color: var(--aubergine); margin-bottom: 8px;">Sensex Awaaz</h3>
+            <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+              Sensex, Nifty aur personal watchlist ki boli hui aam bhasha mein summary. Honest data freshness labels.
+            </p>
+          </div>
+          <a href="/app/sensex-awaaz" class="btn-primary-action" style="text-decoration: none; text-align: center;">
+            Open Market Intelligence &rarr;
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Sovereign Indian AI & System Status -->
+      <div class="content-box-card" style="padding: 22px 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h4 style="font-family: var(--font-display); font-size: 17px; color: var(--aubergine);">AI Readiness &amp; Integrity Status</h4>
+          <span style="font-size: 12px; color: var(--text-muted);">Local SQLite &bull; Python Guardrails Active</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; font-size: 13px;">
+          <div style="background: var(--ice-50); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--aubergine-70);">STT: Prisma v3.0</div>
+            <div id="status-prisma-badge" style="font-weight: 600; color: var(--aubergine); margin-top: 4px;">Checking...</div>
+          </div>
+          <div style="background: var(--ice-50); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--aubergine-70);">LLM: Evon v3.3</div>
+            <div id="status-evon-badge" style="font-weight: 600; color: var(--aubergine); margin-top: 4px;">Checking...</div>
+          </div>
+          <div style="background: var(--ice-50); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--aubergine-70);">TTS: Timbre v2.5</div>
+            <div id="status-timbre-badge" style="font-weight: 600; color: var(--aubergine); margin-top: 4px;">Checking...</div>
+          </div>
+          <div style="background: var(--ice-50); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--aubergine-70);">Market Provider</div>
+            <div id="status-market-badge" style="font-weight: 600; color: var(--aubergine); margin-top: 4px;">Checking...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: GLOBAL CONTEXTUAL AGENT PANEL -->
+    <aside class="workspace-agent-panel">
+      <div id="overview-agent-container" style="height: 100%;"></div>
+    </aside>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/agent-component.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Initialize Contextual Agent for Overview
+      window.vaaniAgents['overview-agent-container'] = new VaaniAgent({
+        containerId: 'overview-agent-container',
+        moduleId: 'overview',
+        moduleTitle: 'Vaani Global Agent',
+        initialGreeting: 'Namaste! Main Vaani hoon. Aap yahan se ledger hisaab, dawa ya market briefing bolkar dekh sakte hain.',
+        quickPhrases: [
+          'Ramesh ko 200 udhaar likh de',
+          'Sunita ne 150 diye',
+          'Maa ki dawa ka waqt kya hai?',
+          'Aaj market kaisa raha?',
+          'Aaj ka hisaab batao'
+        ],
+        onActionExecuted: () => loadOverviewData()
+      });
+
+      // 2. Load overview metrics and service health
+      async function loadOverviewData() {
+        try {
+          const [custResp, sumResp, dosesResp, healthResp] = await Promise.all([
+            fetch('/api/v1/khata/customers'),
+            fetch('/api/v1/khata/summary'),
+            fetch('/api/v1/parchi/doses'),
+            fetch('/api/v1/health')
+          ]);
+
+          const customers = await custResp.json();
+          const summary = await sumResp.json();
+          const dosesData = await dosesResp.json();
+          const health = await healthResp.json();
+
+          // Total outstanding balance across all customers
+          const totalPaise = customers.reduce((acc, c) => acc + (c.balance_paise || 0), 0);
+          document.getElementById('overview-total-balance').textContent = `₹${(totalPaise / 100).toLocaleString('en-IN')}`;
+
+          if (summary.total_payment_paise !== undefined) {
+            document.getElementById('overview-today-collected').textContent = `₹${(summary.total_payment_paise / 100).toLocaleString('en-IN')}`;
+          }
+
+          if (dosesData.doses) {
+            document.getElementById('overview-doses-count').textContent = dosesData.doses.length;
+          }
+
+          // Service Readiness Badges
+          if (health.services) {
+            document.getElementById('status-prisma-badge').textContent = health.services.prisma.status;
+            document.getElementById('status-evon-badge').textContent = health.services.evon.status;
+            document.getElementById('status-timbre-badge').textContent = health.services.timbre.status;
+            document.getElementById('status-market-badge').textContent = health.services.market_data.provider;
+          }
+        } catch (e) {
+          console.error('Error loading overview data:', e);
+        }
+      }
+
+      loadOverviewData();
+    });
+  </script>
+</body>
+</html>

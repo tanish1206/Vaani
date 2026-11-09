@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bol-Khata — Digital Business Ledger | VAANI</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23EAAA00'/><text x='50' y='65' font-size='52' font-family='serif' font-weight='bold' fill='%233A0F34' text-anchor='middle'>व</text></svg>">
+  
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/app-shell.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/agent-component.css">
+</head>
+<body>
+
+  <!-- GLOBAL TOPBAR -->
+  <header class="global-topbar">
+    <div class="topbar-brand-area">
+      <a href="/" class="brand-logo-link">VAANI</a>
+      <span class="brand-tagline-chip">बोल-खाता &bull; Digital Bahi-Khata</span>
+    </div>
+
+    <nav class="topbar-nav-links">
+      <a href="/app" class="topbar-nav-item">Overview</a>
+      <a href="/app/bol-khata" class="topbar-nav-item active">Bol-Khata</a>
+      <a href="/app/parchi" class="topbar-nav-item">Parchi</a>
+      <a href="/app/sensex-awaaz" class="topbar-nav-item">Sensex Awaaz</a>
+      <a href="/app/settings" class="topbar-nav-item">Settings</a>
+    </nav>
+
+    <div class="topbar-utility-actions">
+      <button id="btn-open-add-credit" class="btn-primary-action" style="padding: 6px 14px; font-size: 13px;">
+        + Udhaar Likhna
+      </button>
+      <button id="btn-open-add-payment" class="utility-chip-btn" style="font-weight: 700;">
+        &minus; Jama Lena
+      </button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <div class="page-workspace-container">
+    
+    <!-- MAIN WORKSPACE PANEL -->
+    <main class="workspace-main-panel">
+      <!-- Title & Search Bar -->
+      <div class="page-title-banner">
+        <div>
+          <h1 class="page-title-heading">Bol-Khata (बोल-खाता)</h1>
+          <p class="page-subtitle-text">
+            Bahi-Khata ledger: Grahak hisaab, udhaar, jama aur WhatsApp reminder drafts.
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text" id="customer-search-input" class="form-input" placeholder="Grahak khojein (e.g. Ramesh)..." style="width: 240px; border-radius: var(--radius-pill);" />
+        </div>
+      </div>
+
+      <!-- Financial Summary Metrics -->
+      <div class="stats-cards-grid">
+        <div class="stat-card">
+          <div class="stat-card-label">Total Udhaar Baaki</div>
+          <div id="stat-total-udhaar" class="stat-card-value">&#8377;--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Today's Credit Given</div>
+          <div id="stat-today-credit" class="stat-card-value">&#8377;0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Today's Collections</div>
+          <div id="stat-today-payment" class="stat-card-value" style="color: var(--success);">&#8377;0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Precision Engine</div>
+          <div style="font-size: 14px; font-weight: 700; color: var(--marigold-600); margin-top: 8px;">
+            Integer Paise &bull; No Float Drift
+          </div>
+        </div>
+      </div>
+
+      <!-- Traditional Bahi-Khata Ledger Sheet Card -->
+      <div class="content-box-card bahi-khata-sheet">
+        <div class="content-box-header" style="background: var(--surface-ledger);">
+          <div>
+            <span class="content-box-title">Grahak Bahi-Khata Suchi</span>
+            <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px;">(Customer Balances)</span>
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--marigold-600); background: var(--marigold-100); padding: 3px 10px; border-radius: var(--radius-pill);">
+            Append-Only SQLite Audit
+          </span>
+        </div>
+
+        <table class="ledger-table-full" style="background: var(--surface-ledger);">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 60px;">सलाम</th>
+              <th scope="col">लड़ेकर (Customer Name)</th>
+              <th scope="col">निर्यातल (Total Due)</th>
+              <th scope="col">Status</th>
+              <th scope="col" style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="khata-customers-tbody">
+            <!-- Populated dynamically via bol-khata-page.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Customer Detail Transaction History Drawer -->
+      <div id="customer-detail-card" class="content-box-card" style="display: none; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1.5px solid var(--border); padding-bottom: 12px;">
+          <div>
+            <h3 id="detail-customer-name" style="font-family: var(--font-display); font-size: 22px; color: var(--aubergine);">Ramesh</h3>
+            <span id="detail-customer-balance" style="font-size: 15px; font-weight: 700; color: var(--aubergine);">Total Baaki: ₹850</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-copy-reminder" class="utility-chip-btn" style="background: #25D366; color: #FFFFFF; border-color: #25D366;">
+              📲 Copy WhatsApp Reminder
+            </button>
+            <button id="btn-close-detail" class="utility-chip-btn">&times; Close</button>
+          </div>
+        </div>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--aubergine-70); margin-bottom: 12px;">Recent Entries</h4>
+        <div id="customer-entries-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: DEDICATED CONTEXTUAL BOL-KHATA AGENT -->
+    <aside class="workspace-agent-panel">
+      <div id="khata-agent-container" style="height: 100%;"></div>
+    </aside>
+
+  </div>
+
+  <!-- Manual Add Credit Dialog Modal -->
+  <div id="modal-add-credit" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--aubergine); margin-bottom: 16px;">
+        Udhaar Likhna (+ Add Credit)
+      </h3>
+      <form id="form-add-credit">
+        <div class="form-group">
+          <label class="form-label">Grahak Ka Naam (Customer)</label>
+          <input type="text" id="credit-cust-name" class="form-input" required placeholder="e.g. Ramesh" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rupaye (Amount in ₹)</label>
+          <input type="number" id="credit-amount" class="form-input" required min="1" max="100000" placeholder="e.g. 500" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tafseel / Note (Optional)</label>
+          <input type="text" id="credit-note" class="form-input" placeholder="e.g. Kirana saaman, tel" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary-action" id="btn-cancel-credit">Cancel</button>
+          <button type="submit" class="btn-primary-action">Udhaar Darj Karein</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manual Record Payment Dialog Modal -->
+  <div id="modal-add-payment" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--aubergine); margin-bottom: 16px;">
+        Jama Lena (&minus; Record Payment)
+      </h3>
+      <form id="form-add-payment">
+        <div class="form-group">
+          <label class="form-label">Grahak Ka Naam (Customer)</label>
+          <input type="text" id="payment-cust-name" class="form-input" required placeholder="e.g. Sunita" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rupaye (Amount in ₹)</label>
+          <input type="number" id="payment-amount" class="form-input" required min="1" max="100000" placeholder="e.g. 200" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary-action" id="btn-cancel-payment">Cancel</button>
+          <button type="submit" class="btn-primary-action">Jama Darj Karein</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating Undo Snackbar -->
+  <div id="khata-undo-snackbar" class="undo-snackbar" role="alert" aria-live="polite">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="var(--marigold)"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+    <span id="undo-msg">Hisaab darj hua (Entry recorded).</span>
+    <div class="undo-timer-progress"><div class="undo-timer-bar"></div></div>
+    <button id="btn-trigger-undo" class="undo-action-btn">Undo (हटाएं)</button>
+  </div>
+
+  <script src="/js/agent-component.js"></script>
+  <script src="/js/bol-khata-page.js"></script>
+</body>
+</html>
