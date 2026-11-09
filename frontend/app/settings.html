@@ -309,9 +309,10 @@
             </div>
             <div class="preference-control">
               <select id="prefVoice" class="select-dropdown">
-                <option value="sia">Sia (Default — Warm Indian Voice)</option>
-                <option value="kabir">Kabir (Authoritative & Clear)</option>
-                <option value="priya">Priya (Soft & Patient)</option>
+                <option value="Bhavna" selected>Bhavna (Gnani Timbre v2.5 — Warm Indian Voice)</option>
+                <option value="Madhuri">Madhuri (Gnani Timbre v2.5 — Marathi/Hindi)</option>
+                <option value="Radhika">Radhika (Gnani Timbre v2.5 — English/Hindi)</option>
+                <option value="Deepak">Deepak (Gnani Timbre v2.5 — Authoritative Male)</option>
               </select>
             </div>
           </div>
@@ -380,6 +381,24 @@
       <!-- TAB 2: SYSTEM & AI READINESS DIAGNOSTICS -->
       <div class="tab-content-panel" id="tabDiagnostics">
         
+        <!-- Unified Single API Key Banner -->
+        <div style="background: #FFFFFF; border: 1.5px solid var(--marigold-200); border-radius: var(--radius-md); padding: 18px 24px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:18px;">🔑</span>
+              <span style="font-weight:700; font-size:15px; color:var(--aubergine);">Unified Sovereign AI Credential (GNANI_API_KEY)</span>
+              <span id="badgeUnifiedKey" class="status-badge live">Configured & Active</span>
+            </div>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">
+              A single sovereign API key in <code>.env</code> powers both <strong>Gnani Prisma v3.0</strong> (STT) and <strong>Gnani Timbre v2.5</strong> (TTS).
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Active Masked Key</div>
+            <div id="unifiedKeyDisplay" class="masked-key-chip" style="font-size:13.5px; margin-top:4px;">vach_****</div>
+          </div>
+        </div>
+
         <!-- Live AI Readiness Cards -->
         <div>
           <h2 style="font-family: var(--font-display); font-size: 18px; color: var(--aubergine); margin-bottom: 12px;">AI Subsystem Readiness (Engine Diagnostics)</h2>
@@ -400,7 +419,7 @@
                 <span id="sttMode" class="diag-detail-val">—</span>
               </div>
               <div class="diag-detail-line">
-                <span>Credential</span>
+                <span>Unified Key</span>
                 <span id="sttKey" class="masked-key-chip">—</span>
               </div>
             </div>
@@ -413,15 +432,15 @@
               </div>
               <div class="diag-detail-line">
                 <span>Engine</span>
-                <span class="diag-detail-val">Gnani Evon v3.3</span>
+                <span class="diag-detail-val">Evon v3.3 Schema</span>
               </div>
               <div class="diag-detail-line">
                 <span>Active Mode</span>
                 <span id="intentMode" class="diag-detail-val">—</span>
               </div>
               <div class="diag-detail-line">
-                <span>Credential</span>
-                <span id="intentKey" class="masked-key-chip">—</span>
+                <span>Parser Subsystem</span>
+                <span id="intentKey" class="diag-detail-val" style="font-size:12px; font-weight:600; color:var(--aubergine);">Deterministic Rules</span>
               </div>
             </div>
 
@@ -441,7 +460,7 @@
               </div>
               <div class="diag-detail-line">
                 <span>Voice Persona</span>
-                <span class="diag-detail-val">Sia (Indian En/Hi)</span>
+                <span id="ttsVoiceVal" class="diag-detail-val">Bhavna (Indian Voice)</span>
               </div>
             </div>
 

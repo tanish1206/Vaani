@@ -191,7 +191,7 @@
 
         this.setStatus('Speaking...');
         this.appendMessage('vaani', data.reply_text, data.language, null, data);
-        this.speakNative(data.reply_text, data.language);
+        this.speakResponse(data);
 
         // Notify parent workspace to refresh tables / metrics
         if (this.onActionExecuted) {
@@ -250,12 +250,42 @@
 
         const replayBtn = bubble.querySelector('.btn-replay-icon');
         if (replayBtn) {
-          replayBtn.addEventListener('click', () => this.speakNative(text, lang));
+          replayBtn.addEventListener('click', () => {
+            if (rawPayload && rawPayload.audio_base64) {
+              this.playAudioBase64(rawPayload.audio_base64);
+            } else {
+              this.speakNative(text, lang);
+            }
+          });
         }
       }
 
       this.messagesContainer.appendChild(bubble);
       this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    }
+
+    speakResponse(data) {
+      if (data && data.audio_base64) {
+        this.playAudioBase64(data.audio_base64);
+      } else if (data && data.reply_text) {
+        this.speakNative(data.reply_text, data.language);
+      }
+    }
+
+    playAudioBase64(b64) {
+      try {
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+          this.currentAudio = null;
+        }
+        const audio = new Audio("data:audio/wav;base64," + b64);
+        this.currentAudio = audio;
+        audio.play().catch(e => {
+          console.warn("Audio playback autoplay notice:", e);
+        });
+      } catch (err) {
+        console.warn("Audio element error:", err);
+      }
     }
 
     speakNative(text, lang) {
@@ -334,7 +364,7 @@
         }
         this.setStatus('Speaking...');
         this.appendMessage('vaani', data.reply_text, data.language, null, data);
-        this.speakNative(data.reply_text, data.language);
+        this.speakResponse(data);
 
         if (this.onActionExecuted) {
           this.onActionExecuted(data);
