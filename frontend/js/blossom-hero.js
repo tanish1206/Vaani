@@ -9,7 +9,8 @@
  *                       acoustic waveform rings, editorial typography reveals ("Boliye. Vaani."), and active voice.
  *
  * Fully reversible, butter-smooth 60fps RAF lerp interpolation, zero scroll traps,
- * respects prefers-reduced-motion, and integrates real Web Audio microphone FFT analysis.
+ * uses both SVG attributes and CSS styles for 100% cross-browser reliability,
+ * and integrates real Web Audio microphone FFT analysis.
  */
 
 (function () {
@@ -28,6 +29,22 @@
     return start + (end - start) * factor;
   }
 
+  function setSvgTransform(el, cx, cy, s, rot) {
+    if (!el) return;
+    const r = rot || 0;
+    const t = 'translate(' + cx + ',' + cy + ') scale(' + s.toFixed(4) + ') rotate(' + r.toFixed(2) + ') translate(' + (-cx) + ',' + (-cy) + ')';
+    el.setAttribute('transform', t);
+    el.style.transformOrigin = cx + 'px ' + cy + 'px';
+    el.style.transform = 'scale(' + s.toFixed(4) + ') rotate(' + r.toFixed(2) + 'deg)';
+  }
+
+  function setSvgOpacity(el, op) {
+    if (!el) return;
+    const val = clamp(op, 0, 1).toFixed(3);
+    el.setAttribute('opacity', val);
+    el.style.opacity = val;
+  }
+
   class BotanicalBlossomHero {
     constructor() {
       this.track = document.getElementById('heroBlossomTrack');
@@ -40,7 +57,14 @@
       this.stemPath = document.getElementById('stemPath');
       this.stemShadowPath = document.getElementById('stemShadowPath');
       this.stemHighlightPath = document.getElementById('stemHighlightPath');
-      this.stemLength = 515;
+      this.stemLength = 520;
+
+      this.stemNodes = [
+        document.getElementById('stemNode1'),
+        document.getElementById('stemNode2'),
+        document.getElementById('stemNode3'),
+        document.getElementById('stemNode4')
+      ];
 
       // Seed Elements
       this.seedGroup = document.getElementById('botanicalSeed');
@@ -70,7 +94,7 @@
       this.sepalRight = document.getElementById('sepalRight');
       this.budSpire = document.getElementById('budSpire');
 
-      // Petal Tiers (Independently controllable layers)
+      // Petal Tiers
       this.outerPetals = {
         dorsal: document.getElementById('petalOuterDorsal'),
         upperLeft: document.getElementById('petalOuterUpperLeft'),
@@ -101,27 +125,24 @@
         document.getElementById('petalInner6')
       ];
 
-      // Flower Center & Acoustic Glow
+      // Center & Acoustic Elements
       this.flowerCenter = document.getElementById('botanicalFlowerCenter');
       this.coreGlowCircle = document.getElementById('coreGlowCircle');
+      this.coreHearth = document.getElementById('coreHearth');
       this.stamenFilaments = document.getElementById('stamenFilaments');
       this.pollenMotes = document.getElementById('pollenMotes');
       this.soundRings = document.getElementById('acousticSoundRings');
       this.waveformRibbon = document.getElementById('botanicalWaveformRibbon');
 
-      // Typography & UI Reveal Nodes
+      // Reveal Nodes
       this.revealNodes = document.querySelectorAll('[data-blossom-reveal]');
-      this.headlineBoliye = document.getElementById('heroHeadlineBoliye');
-      this.headlineVaani = document.getElementById('heroHeadlineVaani');
-      this.supportingCopy = document.getElementById('heroSupportingCopy');
-      this.ctaGroup = document.querySelector('.hero-cta-group');
 
-      // Voice Buttons & Mic Interaction
+      // Voice Controls
       this.heroVoiceBtn = document.getElementById('heroVoiceBtn');
       this.heroVoiceBtnText = document.getElementById('heroVoiceBtnText');
       this.phoneMicOrb = document.getElementById('phoneMicOrb');
 
-      // Animation State
+      // State
       this.currentProgress = 0;
       this.targetProgress = 0;
       this.rafId = 0;
@@ -130,7 +151,6 @@
       this.analyser = null;
       this.mediaStream = null;
       this.liveVolume = 0;
-      this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       if (!this.track || !this.sticky) return;
 
@@ -138,90 +158,95 @@
     }
 
     init() {
-      // Measure real stem path length for dasharray calculation
+      // 1. Measure real stem path length
       if (this.stemPath && typeof this.stemPath.getTotalLength === 'function') {
         try {
-          this.stemLength = this.stemPath.getTotalLength() || 515;
-        } catch (e) {
-          this.stemLength = 515;
-        }
+          const l = this.stemPath.getTotalLength();
+          if (l && l > 100) this.stemLength = l;
+        } catch (e) {}
       }
 
-      // Initialize branch lengths
-      this.branchLengths = this.branches.map(b => {
+      // 2. Initialize branch lengths
+      this.branchLengths = [70, 75, 55, 55];
+      this.branches.forEach((b, i) => {
         if (b && typeof b.getTotalLength === 'function') {
           try {
-            const len = b.getTotalLength();
-            b.style.strokeDasharray = `${len} ${len}`;
-            b.style.strokeDashoffset = len;
-            return len;
-          } catch (e) {
-            return 80;
-          }
+            const len = b.getTotalLength() || this.branchLengths[i];
+            this.branchLengths[i] = len;
+            b.setAttribute('stroke-dasharray', len + ' ' + len);
+            b.setAttribute('stroke-dashoffset', String(len));
+            b.style.strokeDasharray = len + ' ' + len;
+            b.style.strokeDashoffset = String(len);
+          } catch (e) {}
         }
-        return 80;
       });
 
-      // Prepare Stem Stroke Dasharray
+      // 3. Initialize stem stroke-dasharray & dashoffset to hidden state
       [this.stemPath, this.stemShadowPath, this.stemHighlightPath].forEach(path => {
         if (path) {
-          path.style.strokeDasharray = `${this.stemLength} ${this.stemLength}`;
-          path.style.strokeDashoffset = this.stemLength;
+          path.setAttribute('stroke-dasharray', this.stemLength + ' ' + this.stemLength);
+          path.setAttribute('stroke-dashoffset', String(this.stemLength));
+          path.style.strokeDasharray = this.stemLength + ' ' + this.stemLength;
+          path.style.strokeDashoffset = String(this.stemLength);
+          setSvgOpacity(path, 0);
         }
       });
 
-      // Bind Scroll and Resize
+      // 4. Force immediate render of Stage 0 (Seed and ground only)
+      this.renderStage(0);
+
+      // 5. Bind Scroll & Resize handlers
       this.onScroll = this.onScroll.bind(this);
       this.onResize = this.onResize.bind(this);
       this.tick = this.tick.bind(this);
 
       window.addEventListener('scroll', this.onScroll, { passive: true });
       window.addEventListener('resize', this.onResize, { passive: true });
+      window.addEventListener('wheel', this.onScroll, { passive: true });
+      window.addEventListener('touchmove', this.onScroll, { passive: true });
 
-      // Microphone activation on CTA
+      // 6. Bind Real Web Audio Microphone
       this.bindMicrophone();
 
-      // If reduced motion, jump straight to 100% full blossom
-      if (this.reducedMotion) {
-        this.targetProgress = 1;
-        this.currentProgress = 1;
-        this.renderStage(1);
-        return;
-      }
-
-      // Initial layout tick
+      // 7. Initial sync & start 60fps tick loop
       this.onScroll();
       this.tick();
     }
 
     onScroll() {
-      const rect = this.track.getBoundingClientRect();
-      const maxScroll = Math.max(1, rect.height - window.innerHeight);
-      const scrolled = clamp(-rect.top, 0, maxScroll);
-      this.targetProgress = scrolled / maxScroll;
+      if (!this.track) return;
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      const trackRect = this.track.getBoundingClientRect();
+      const trackTop = trackRect.top + scrollY;
+      const trackHeight = this.track.offsetHeight;
+      const windowHeight = window.innerHeight;
+      const maxScroll = Math.max(1, trackHeight - windowHeight);
+      const relativeScrolled = clamp(scrollY - trackTop, 0, maxScroll);
+      this.targetProgress = relativeScrolled / maxScroll;
     }
 
     onResize() {
       if (this.stemPath && typeof this.stemPath.getTotalLength === 'function') {
         try {
-          this.stemLength = this.stemPath.getTotalLength() || 515;
+          const l = this.stemPath.getTotalLength();
+          if (l && l > 100) this.stemLength = l;
         } catch (e) {}
       }
       this.onScroll();
     }
 
     tick() {
-      // Smooth linear interpolation (lerp) for cinematic inertia
+      // Smooth linear interpolation (lerp) for weighted cinematic scrubbing
       const diff = this.targetProgress - this.currentProgress;
-      if (Math.abs(diff) > 0.0005) {
-        this.currentProgress = lerp(this.currentProgress, this.targetProgress, 0.12);
+      if (Math.abs(diff) > 0.0008) {
+        this.currentProgress = lerp(this.currentProgress, this.targetProgress, 0.16);
         this.renderStage(this.currentProgress);
       } else if (Math.abs(diff) > 0) {
         this.currentProgress = this.targetProgress;
         this.renderStage(this.currentProgress);
       }
 
-      // Live Microphone Audio Visualizer Modulation
+      // Sample live microphone amplitude
       if (this.isListening && this.analyser) {
         this.sampleMicrophone();
       }
@@ -230,54 +255,68 @@
     }
 
     /**
-     * Renders the 4 coordinated botanical stages based on scrub progress p (0.0 to 1.0)
+     * Renders all botanical layers based on scrub progress p (0.0 to 1.0)
      */
     renderStage(p) {
       // 1. Progress Bar & Scroll Hint
       if (this.progressFill) {
-        this.progressFill.style.transform = `scaleX(${p})`;
+        this.progressFill.style.transform = 'scaleX(' + p.toFixed(4) + ')';
       }
       if (this.scrollHint) {
         this.scrollHint.classList.toggle('is-hidden', p > 0.12);
       }
 
-      // Expose CSS variable for background ambient warmth
       document.documentElement.style.setProperty('--hero-blossom-progress', String(p));
 
       // ----------------------------------------------------------------------
       // STAGE 1: SEED & GROUND (0% - 15%)
       // ----------------------------------------------------------------------
-      const seedWarmth = smoothstep(0, 0.12, p);
+      const seedWarmth = smoothstep(0, 0.14, p);
       if (this.seedAura) {
-        const pulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.003);
-        const auraOpacity = p < 0.25 ? (0.4 + 0.5 * seedWarmth) * pulse : Math.max(0, 1 - (p - 0.25) * 4);
-        this.seedAura.style.opacity = String(auraOpacity);
+        const pulse = 0.65 + 0.35 * Math.sin(Date.now() * 0.0035);
+        const auraOp = p < 0.25 ? (0.5 + 0.5 * seedWarmth) * pulse : Math.max(0, 1 - (p - 0.25) * 4);
+        setSvgOpacity(this.seedAura, auraOp);
       }
       if (this.seedBody) {
-        const seedScale = p < 0.18 ? 1 + p * 0.4 : Math.max(0.7, 1 - (p - 0.18) * 1.5);
-        this.seedBody.style.transformOrigin = '720px 812px';
-        this.seedBody.style.transform = `scale(${seedScale})`;
+        const seedScale = p < 0.18 ? 1 + p * 0.5 : Math.max(0.7, 1 - (p - 0.18) * 1.6);
+        setSvgTransform(this.seedBody, 720, 812, seedScale, -8);
       }
       if (this.seedEmbryo) {
-        const embryoRise = smoothstep(0.06, 0.20, p) * -12;
-        this.seedEmbryo.style.transform = `translateY(${embryoRise}px)`;
-        this.seedEmbryo.style.opacity = String(p < 0.35 ? 1 : Math.max(0, 1 - (p - 0.35) * 3));
+        const embryoRise = smoothstep(0.06, 0.22, p) * -14;
+        this.seedEmbryo.setAttribute('transform', 'translate(0, ' + embryoRise.toFixed(2) + ')');
+        setSvgOpacity(this.seedEmbryo, p < 0.35 ? 1 : Math.max(0, 1 - (p - 0.35) * 3));
       }
 
       // ----------------------------------------------------------------------
-      // STAGE 2: STEM GROWTH & BRANCHES (15% - 42%)
+      // STAGE 2: STEM GROWTH & BRANCHES (15% - 44%)
       // ----------------------------------------------------------------------
       const stemGrowth = smoothstep(0.10, 0.44, p);
       const stemOffset = this.stemLength * (1 - stemGrowth);
 
       [this.stemPath, this.stemShadowPath, this.stemHighlightPath].forEach(path => {
         if (path) {
-          path.style.strokeDashoffset = String(stemOffset);
-          path.style.opacity = stemGrowth > 0.01 ? '1' : '0';
+          path.setAttribute('stroke-dashoffset', stemOffset.toFixed(2));
+          path.style.strokeDashoffset = stemOffset.toFixed(2);
+          setSvgOpacity(path, stemGrowth > 0.01 ? 1 : 0);
         }
       });
 
-      // Branches draw as the stem grows past each node
+      // Stem nodes
+      const nodeProgresses = [
+        smoothstep(0.20, 0.30, p),
+        smoothstep(0.26, 0.36, p),
+        smoothstep(0.32, 0.42, p),
+        smoothstep(0.38, 0.46, p)
+      ];
+      this.stemNodes.forEach((node, idx) => {
+        if (node) {
+          const np = nodeProgresses[idx];
+          setSvgTransform(node, parseFloat(node.getAttribute('cx')), parseFloat(node.getAttribute('cy')), np);
+          setSvgOpacity(node, np);
+        }
+      });
+
+      // Branches draw as stem reaches each node
       const branchProgress = [
         smoothstep(0.22, 0.36, p),
         smoothstep(0.28, 0.40, p),
@@ -288,19 +327,26 @@
       this.branches.forEach((b, i) => {
         if (b && this.branchLengths[i]) {
           const bp = branchProgress[i];
-          b.style.strokeDashoffset = String(this.branchLengths[i] * (1 - bp));
-          b.style.opacity = bp > 0.02 ? '1' : '0';
+          const offset = this.branchLengths[i] * (1 - bp);
+          b.setAttribute('stroke-dashoffset', offset.toFixed(2));
+          b.style.strokeDashoffset = offset.toFixed(2);
+          setSvgOpacity(b, bp > 0.02 ? 1 : 0);
         }
       });
 
-      // Leaves emerge & unfurl with natural rotation
+      // Leaves emerge & rotate around branch endpoints
+      const leafOrigins = [
+        [595, 618],
+        [830, 538],
+        [608, 434],
+        [804, 385]
+      ];
       const leafScales = [
         smoothstep(0.24, 0.40, p),
         smoothstep(0.30, 0.44, p),
         smoothstep(0.34, 0.48, p),
         smoothstep(0.38, 0.52, p)
       ];
-
       const leafRotations = [
         lerp(-28, 0, leafScales[0]),
         lerp(28, 0, leafScales[1]),
@@ -312,95 +358,95 @@
         if (leaf) {
           const s = leafScales[i];
           const rot = leafRotations[i];
-          leaf.style.transform = `scale(${s}) rotate(${rot}deg)`;
-          leaf.style.opacity = String(clamp(s * 1.5, 0, 1));
+          const [lx, ly] = leafOrigins[i];
+          setSvgTransform(leaf, lx, ly, s, rot);
+          setSvgOpacity(leaf, clamp(s * 1.5, 0, 1));
         }
       });
 
-      // Sub-calyx bracts cradling bud apex
+      // Sub-calyx bracts
       if (this.bracts) {
         const bractScale = smoothstep(0.36, 0.50, p);
-        this.bracts.style.transformOrigin = '705px 315px';
-        this.bracts.style.transform = `scale(${bractScale})`;
-        this.bracts.style.opacity = String(bractScale);
+        setSvgTransform(this.bracts, 705, 315, bractScale);
+        setSvgOpacity(this.bracts, bractScale);
       }
 
       // ----------------------------------------------------------------------
-      // STAGE 3: BUD OPENING & PETAL DEVELOPMENT (42% - 72%)
+      // STAGE 3: BUD OPENING & PETAL UNCOROLLA (42% - 72%)
       // ----------------------------------------------------------------------
       const budForm = smoothstep(0.32, 0.48, p);
       const budOpen = smoothstep(0.44, 0.68, p);
 
       if (this.budCluster) {
-        this.budCluster.style.opacity = String(budForm > 0.02 ? Math.max(0.1, 1 - budOpen * 0.9) : 0);
+        setSvgTransform(this.budCluster, 705, 310, budForm);
+        setSvgOpacity(this.budCluster, budForm > 0.02 ? Math.max(0.05, 1 - budOpen * 0.95) : 0);
       }
       if (this.sepalLeft) {
         const sepalRot = lerp(0, -42, budOpen);
-        this.sepalLeft.style.transform = `scale(${budForm}) rotate(${sepalRot}deg)`;
+        setSvgTransform(this.sepalLeft, 705, 310, 1, sepalRot);
       }
       if (this.sepalRight) {
         const sepalRot = lerp(0, 42, budOpen);
-        this.sepalRight.style.transform = `scale(${budForm}) rotate(${sepalRot}deg)`;
+        setSvgTransform(this.sepalRight, 705, 310, 1, sepalRot);
       }
       if (this.budSpire) {
-        this.budSpire.style.opacity = String(Math.max(0, 1 - budOpen * 1.5));
+        setSvgOpacity(this.budSpire, Math.max(0, 1 - budOpen * 1.5));
       }
 
-      // Outer Petals unfold with individual rotation and non-linear spring easing
+      // Outer Petals (Tier 1) — Individual rotations around receptacle (705, 310)
       const outerBloom = smoothstep(0.45, 0.82, p);
 
       if (this.outerPetals.dorsal) {
         const s = outerBloom;
         const rot = lerp(-18, 0, smoothstep(0.48, 0.80, p));
-        this.outerPetals.dorsal.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.dorsal.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.dorsal, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.dorsal, s > 0.02 ? 1 : 0);
       }
       if (this.outerPetals.upperLeft) {
         const s = outerBloom;
         const rot = lerp(32, 0, smoothstep(0.46, 0.82, p));
-        this.outerPetals.upperLeft.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.upperLeft.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.upperLeft, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.upperLeft, s > 0.02 ? 1 : 0);
       }
       if (this.outerPetals.upperRight) {
         const s = outerBloom;
         const rot = lerp(-32, 0, smoothstep(0.46, 0.82, p));
-        this.outerPetals.upperRight.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.upperRight.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.upperRight, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.upperRight, s > 0.02 ? 1 : 0);
       }
       if (this.outerPetals.lateralLeft) {
         const s = outerBloom;
         const rot = lerp(45, 0, smoothstep(0.50, 0.84, p));
-        this.outerPetals.lateralLeft.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.lateralLeft.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.lateralLeft, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.lateralLeft, s > 0.02 ? 1 : 0);
       }
       if (this.outerPetals.lateralRight) {
         const s = outerBloom;
         const rot = lerp(-45, 0, smoothstep(0.50, 0.84, p));
-        this.outerPetals.lateralRight.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.lateralRight.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.lateralRight, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.lateralRight, s > 0.02 ? 1 : 0);
       }
       if (this.outerPetals.inferiorLeft) {
         const s = outerBloom;
         const rot = lerp(35, 0, smoothstep(0.52, 0.86, p));
-        this.outerPetals.inferiorLeft.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.inferiorLeft.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.inferiorLeft, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.inferiorLeft, s > 0.02 ? 1 : 0);
       }
       if (this.outerPetals.inferiorRight) {
         const s = outerBloom;
         const rot = lerp(-35, 0, smoothstep(0.52, 0.86, p));
-        this.outerPetals.inferiorRight.style.transform = `scale(${s}) rotate(${rot}deg)`;
-        this.outerPetals.inferiorRight.style.opacity = String(s > 0.05 ? 1 : s * 20);
+        setSvgTransform(this.outerPetals.inferiorRight, 705, 310, s, rot);
+        setSvgOpacity(this.outerPetals.inferiorRight, s > 0.02 ? 1 : 0);
       }
 
-      // Intermediate Petals follow slightly phased
-      const midBloom = smoothstep(0.54, 0.88, p);
+      // Intermediate Petals (Tier 2) — Phased expansion
       this.midPetals.forEach((petal, idx) => {
         if (petal) {
           const phaseLag = 0.52 + (idx * 0.02);
           const s = smoothstep(phaseLag, phaseLag + 0.28, p);
           const staggerRot = ((idx % 2 === 0 ? 1 : -1) * (18 - idx * 2)) * (1 - s);
-          petal.style.transform = `scale(${s}) rotate(${staggerRot}deg)`;
-          petal.style.opacity = String(s > 0.02 ? 0.95 : 0);
+          setSvgTransform(petal, 705, 310, s, staggerRot);
+          setSvgOpacity(petal, s > 0.02 ? 0.95 : 0);
         }
       });
 
@@ -412,46 +458,44 @@
         if (petal) {
           const s = innerBloom;
           const rot = ((idx % 2 === 0 ? 1 : -1) * 12) * (1 - s);
-          petal.style.transform = `scale(${s}) rotate(${rot}deg)`;
-          petal.style.opacity = String(s > 0.05 ? 1 : 0);
+          setSvgTransform(petal, 705, 310, s, rot);
+          setSvgOpacity(petal, s > 0.05 ? 1 : 0);
         }
       });
 
-      // Core Stamen Warmth & Hearth Glow
+      // Core Stamen & Receptacle Hearth
       const fullBloom = smoothstep(0.70, 0.96, p);
       if (this.flowerCenter) {
-        this.flowerCenter.style.opacity = String(fullBloom);
+        setSvgTransform(this.flowerCenter, 705, 310, fullBloom);
+        setSvgOpacity(this.flowerCenter, fullBloom);
       }
       if (this.coreGlowCircle) {
         const livePulse = this.isListening ? 1 + this.liveVolume * 0.8 : 1;
-        this.coreGlowCircle.style.transformOrigin = '705px 310px';
-        this.coreGlowCircle.style.transform = `scale(${fullBloom * livePulse})`;
+        setSvgTransform(this.coreGlowCircle, 705, 310, fullBloom * livePulse);
       }
       if (this.stamenFilaments) {
         const stamenScale = smoothstep(0.72, 0.95, p);
-        this.stamenFilaments.style.transformOrigin = '705px 310px';
-        this.stamenFilaments.style.transform = `scale(${stamenScale})`;
+        setSvgTransform(this.stamenFilaments, 705, 310, stamenScale);
       }
       if (this.pollenMotes) {
         const pollenScale = smoothstep(0.76, 0.98, p);
-        this.pollenMotes.style.transformOrigin = '705px 310px';
-        this.pollenMotes.style.transform = `scale(${pollenScale})`;
+        setSvgTransform(this.pollenMotes, 705, 310, pollenScale);
       }
 
       // Concentric Acoustic Sound Wave Rings
       if (this.soundRings) {
         const soundScale = smoothstep(0.80, 1.0, p);
-        this.soundRings.style.opacity = String(soundScale * 0.85);
+        setSvgOpacity(this.soundRings, soundScale * 0.85);
       }
 
       // Horizontal Waveform Frequency Bands
       if (this.waveformRibbon) {
         const waveScale = smoothstep(0.82, 1.0, p);
-        this.waveformRibbon.style.opacity = String(waveScale * 0.92);
+        setSvgOpacity(this.waveformRibbon, waveScale * 0.92);
       }
 
       // ----------------------------------------------------------------------
-      // TYPOGRAPHY & OVERLAY CHOREOGRAPHY
+      // EDITORIAL TYPOGRAPHY & OVERLAY CHOREOGRAPHY
       // ----------------------------------------------------------------------
       this.revealNodes.forEach(node => {
         const start = parseFloat(node.dataset.revealAt || '0.7');
@@ -501,9 +545,12 @@
           }
 
           // Advance flower bloom if not already scrolled
-          if (this.currentProgress < 0.85) {
+          if (this.currentProgress < 0.85 && this.track) {
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            const trackRect = this.track.getBoundingClientRect();
+            const trackTop = trackRect.top + scrollY;
             window.scrollTo({
-              top: this.track.offsetTop + this.track.offsetHeight * 0.88,
+              top: trackTop + this.track.offsetHeight * 0.88,
               behavior: 'smooth'
             });
           }
@@ -557,16 +604,13 @@
         sum += dataArray[i];
       }
       const avg = sum / dataArray.length;
-      this.liveVolume = avg / 128.0; // 0.0 to 1.0+
+      this.liveVolume = avg / 128.0;
 
-      // Modulate sound rings with real voice decibels
       if (this.soundRings) {
         const ringScale = 1 + this.liveVolume * 0.45;
-        this.soundRings.style.transformOrigin = '705px 310px';
-        this.soundRings.style.transform = `scale(${ringScale})`;
+        setSvgTransform(this.soundRings, 705, 310, ringScale);
       }
 
-      // Notify window audio visualizer if connected
       if (window.vaaniVisualizer && typeof window.vaaniVisualizer.setLiveAmplitude === 'function') {
         window.vaaniVisualizer.setLiveAmplitude(this.liveVolume);
       }
@@ -590,6 +634,8 @@
     destroy() {
       window.removeEventListener('scroll', this.onScroll);
       window.removeEventListener('resize', this.onResize);
+      window.removeEventListener('wheel', this.onScroll);
+      window.removeEventListener('touchmove', this.onScroll);
       if (this.rafId) cancelAnimationFrame(this.rafId);
       this.stopMicrophone();
     }
