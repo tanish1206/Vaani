@@ -60,31 +60,110 @@ $env:PYTHONPATH="backend"; python scripts/test_landing_server.py
 
 ---
 
+## Multi-Page Product Architecture
+
+VAANI features a dedicated multi-page workspace architecture:
+
+| URL Route | Workspace | Description |
+|---|---|---|
+| `/` | **Landing Page** | Editorial landing page matching the visual direction with botanical orchid, golden audio waveforms, layered cards, and interactive voice demo |
+| `/app` | **Overview Hub** | Central entry point showing quick balance statistics, meal slot timeline, live Sensex ticker, and global conversational agent |
+| `/app/bol-khata` | **Bol-Khata** | Dedicated digital business ledger with customer search, customer drawer, add credit / record payment forms, WhatsApp reminder copy, and contextual voice agent |
+| `/app/parchi` | **Parchi** | Dedicated medicine reminder workspace with meal-slot schedule (*subah, dopahar, shaam, raat*), "Mark Done", "Snooze 10m", add prescription dialog, and contextual voice agent |
+| `/app/sensex-awaaz` | **Sensex Awaaz** | Dedicated market workspace with live Sensex & Nifty tiles, candlestick movement spectrum, personal watchlist, spoken market briefings, honest freshness tags, and contextual voice agent |
+| `/app/settings` | **Settings & Diagnostics** | Shopkeeper preferences & evaluator AI readiness diagnostics (Prisma STT, Evon LLM, Timbre TTS, Market Provider, database health, masked credentials, demo reset) |
+
+---
+
+## Verification & Testing Suite
+
+Run the automated verification test suites:
+
+```bash
+# 1. 40-Utterance Conversational Benchmark (100% Pass)
+python scripts/eval_utterances.py
+
+# 2. Phase 1 Server & Asset Integration Tests (100% Pass)
+python scripts/test_landing_server.py
+
+# 3. Phase 2 Multi-Page & API Readiness Test Suite (100% Pass)
+python scripts/test_phase2_multi_page.py
+```
+
+---
+
+## Configuration & Secret Safety
+
+Copy `.env.example` to `.env` to configure live credentials:
+
+```bash
+# Production vs Demo Mode
+DEMO_MODE=true                # Set to false for clean database with zero sample fixtures
+
+# Gnani Sovereign AI Credentials (Server-Side Only)
+GNANI_API_KEY=gnan_live_...   # Unified API key for Prisma, Evon, and Timbre
+EVON_ENABLED=true             # Set to true when Evon LLM endpoint is active
+EVON_API_KEY=gnan_live_...
+
+# Market Provider
+MARKET_PROVIDER=yahoo_finance # Real-time quotes via yfinance with 5-minute cache
+```
+
+> **Security Guarantee:** Credentials are strictly server-side. Diagnostics endpoints return masked strings (`gnan_****` or `Not Configured`). Secret keys are never leaked to client browsers.
+
+---
+
 ## Repository Structure
 
 ```
 backend/
   app/
-    main.py              # FastAPI application & endpoints
-    config.py            # Environment settings (Pydantic Settings)
+    main.py              # FastAPI application, explicit HTML multi-page routes & static mount
+    config.py            # Pydantic Settings with masked credentials and readiness checks
+    api/
+      khata.py           # /api/v1/khata endpoints (customers, transactions, undo)
+      parchi.py          # /api/v1/parchi endpoints (prescriptions, doses, mark done, snooze)
+      bazaar.py          # /api/v1/bazaar endpoints (overview, snapshot, spoken briefing)
+      settings.py        # /api/v1/settings endpoints (preferences, diagnostics, latency ping, reset)
+    modules/
+      khata/             # Ledger logic with integer paise arithmetic and 8s undo
+      parchi/            # Meal-slot scheduling, verbatim recording, and refusal guards
+      bazaar/            # Safe yfinance market feeds with socket timeout guards & 5m cache
+    core/
+      pipeline.py        # Voice pipeline orchestrator (Prisma STT -> Evon -> Guardrails -> SQLite -> Timbre TTS)
+      session.py         # Multi-turn conversational session state and undo stack
+    db/
+      session.py         # SQLite connection manager with WAL mode & foreign keys
+      seed.py            # Sample demo fixtures & reset_demo_data()
 frontend/
   index.html             # Editorial landing page matching design reference
+  app/
+    overview.html        # /app central gateway & module overview
+    bol-khata.html       # /app/bol-khata dedicated ledger workspace
+    parchi.html          # /app/parchi dedicated medicine reminder workspace
+    sensex-awaaz.html    # /app/sensex-awaaz dedicated market intelligence workspace
+    settings.html        # /app/settings shopkeeper preferences & diagnostics
   styles/
     tokens.css           # Design tokens (Ice Silver, Deep Aubergine, Marigold)
     landing.css          # Editorial layout, typography, grid, responsive styles
-    components.css       # Bahi-Khata ledger, Parchi slip, Sensex chart, mic visualizer
+    app-shell.css        # Multi-page shell, topbar navigation, cards, drawers, forms
+    agent-component.css  # Voice mic, speech wave, action confirmation bubbles
   js/
-    landing.js           # Navigation, multilingual translation, night mode, FAQ
-    voice-simulator.js   # Voice lifecycle state machine & 40-utterance benchmark runner
-    audio-visualizer.js  # Reactive golden waveform canvas
+    agent-component.js   # Reusable conversational agent with Web Audio MediaRecorder
+    bol-khata-page.js    # Ledger client-side controller & modal handlers
+    parchi-page.js       # Medicine reminders controller & timeline handlers
+    sensex-page.js       # Market overview controller & audio player
+    settings-page.js     # Settings controller & live latency diagnostics runner
   assets/
     botanical-artwork.svg # High-fidelity botanical orchid with integrated audio waveforms
     mandala.svg          # Ornate golden Indian mandala medallion
 data/
-  vaani.db               # Local SQLite database (git-ignored)
+  vaani.db               # Local SQLite database in WAL mode (git-ignored)
 scripts/
   run_dev.py             # Development server launcher
-  test_landing_server.py # Test script for API & static asset delivery
+  eval_utterances.py     # 40-utterance benchmark test suite
+  test_landing_server.py # Phase 1 integration tests
+  test_phase2_multi_page.py # Phase 2 multi-page verification suite
 ```
 
 ---

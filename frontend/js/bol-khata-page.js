@@ -265,3 +265,4 @@
     window.khataWorkspace = new BolKhataWorkspace();
   });
 })();
+
