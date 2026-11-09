@@ -150,11 +150,14 @@ class EvonParser:
             }
 
         # 4. Out of scope / Greetings
-        if text_lower in ["namaste", "namaskar", "hello", "hi"]:
+        if text_lower in ["namaste", "namaskar", "hello", "hi"] or "marathi mein bolo" in text_lower or "hindi mein bolo" in text_lower:
+            reply = "Namaste! Main Vaani hoon. Boliye, kya hisaab likhna hai?"
+            if "marathi" in text_lower:
+                reply = "Namaste! Mi Vaani aahe. Boliye, kai madat karu shakto?"
             return {
-                "language": detected_lang,
+                "language": "mr" if "marathi" in text_lower else detected_lang,
                 "actions": [],
-                "clarification": "Namaste! Main Vaani hoon. Boliye, kya hisaab likhna hai?",
+                "clarification": reply,
                 "confidence": 1.0
             }
 
@@ -185,8 +188,8 @@ class EvonParser:
                 "confidence": 0.95
             }
 
-        # 6. Sensex Awaaz / Market Snapshot
-        if any(w in text_lower for w in ["market", "bazaar", "sensex", "nifty"]):
+        # 6. Sensex Awaaz / Market Snapshot & Watchlist
+        if any(w in text_lower for w in ["market", "bazaar", "sensex", "nifty", "reliance", "watchlist", "tcs"]):
             symbols = []
             if "reliance" in text_lower:
                 symbols.append("Reliance")
@@ -203,7 +206,34 @@ class EvonParser:
                 "confidence": 0.95
             }
 
-        # 7. Parchi (Prescription & Medicine Reminders)
+        # 7. Parchi Query & Actions (Priority over save_prescription)
+        if "kaunsi dawa" in text_lower or "dawa dikhao" in text_lower or "dawa leni hai" in text_lower or "aaj dawa" in text_lower:
+            return {
+                "language": detected_lang,
+                "actions": [{"tool": "list_doses", "args": {"when": "today"}}],
+                "clarification": None,
+                "confidence": 0.95
+            }
+
+        if text_lower in ["de di", "ho gaya", "le li", "done"]:
+            return {
+                "language": detected_lang,
+                "actions": [{"tool": "mark_dose_done", "args": {}}],
+                "clarification": None,
+                "confidence": 0.95
+            }
+
+        if "yaad dilana" in text_lower or "snooze" in text_lower:
+            mins_match = re.search(r"([0-9]+)\s*minute", text_lower)
+            mins = int(mins_match.group(1)) if mins_match else 10
+            return {
+                "language": detected_lang,
+                "actions": [{"tool": "snooze_dose", "args": {"minutes": mins}}],
+                "clarification": None,
+                "confidence": 0.95
+            }
+
+        # 8. Parchi (Prescription & Medicine Reminders)
         if any(w in text_lower for w in ["goli", "dawa", "antibiotic", "sugar ki dawa", "bp ki goli", "गोळी"]):
             patient = "Maa"
             if "papa" in text_lower:
@@ -253,42 +283,14 @@ class EvonParser:
                 "confidence": 0.94
             }
 
-        # 8. Parchi Actions: Mark Done / Snooze / List
-        if text_lower in ["de di", "ho gaya", "le li", "done"]:
-            return {
-                "language": detected_lang,
-                "actions": [{"tool": "mark_dose_done", "args": {}}],
-                "clarification": None,
-                "confidence": 0.95
-            }
-
-        if "yaad dilana" in text_lower or "snooze" in text_lower:
-            mins_match = re.search(r"([0-9]+)\s*minute", text_lower)
-            mins = int(mins_match.group(1)) if mins_match else 10
-            return {
-                "language": detected_lang,
-                "actions": [{"tool": "snooze_dose", "args": {"minutes": mins}}],
-                "clarification": None,
-                "confidence": 0.95
-            }
-
-        if "kaunsi dawa" in text_lower or "dawa dikhao" in text_lower:
-            return {
-                "language": detected_lang,
-                "actions": [{"tool": "list_doses", "args": {"when": "today"}}],
-                "clarification": None,
-                "confidence": 0.95
-            }
-
-        # 9. Bol-Khata Queries
-        if "kitna baaki" in text_lower or "baaki kitna" in text_lower or "hisaab batao" in text_lower:
-            # Check for customer name
-            name_match = re.search(r"([a-zA-Z\u0900-\u097F]+)\s*ka\s*kitna\s*baaki", text_lower)
-            if name_match:
-                cust_name = name_match.group(1).capitalize()
+        # 9. Bol-Khata Inquiries & Summaries
+        if any(w in text_lower for w in ["kitna baaki", "baaki kitna", "hisaab batao", "total kitna", "sabse zyada udhaar", "sabse jyada", "top"]):
+            if "sabse zyada udhaar" in text_lower or "sabse jyada" in text_lower or "top" in text_lower:
+                limit_match = re.search(r"top\s*([0-9]+)", text_lower)
+                lim = int(limit_match.group(1)) if limit_match else 5
                 return {
                     "language": detected_lang,
-                    "actions": [{"tool": "get_balance", "args": {"customer_name": cust_name, "customer_name_roman": cust_name}}],
+                    "actions": [{"tool": "top_debtors", "args": {"limit": lim}}],
                     "clarification": None,
                     "confidence": 0.95
                 }
@@ -299,10 +301,13 @@ class EvonParser:
                     "clarification": None,
                     "confidence": 0.95
                 }
-            if "sabse zyada udhaar" in text_lower or "top" in text_lower:
+            # Check for customer name
+            name_match = re.search(r"([a-zA-Z\u0900-\u097F]+)\s*ka\s*kitna", text_lower)
+            if name_match:
+                cust_name = name_match.group(1).capitalize()
                 return {
                     "language": detected_lang,
-                    "actions": [{"tool": "top_debtors", "args": {"limit": 5}}],
+                    "actions": [{"tool": "get_balance", "args": {"customer_name": cust_name, "customer_name_roman": cust_name}}],
                     "clarification": None,
                     "confidence": 0.95
                 }
@@ -332,8 +337,8 @@ class EvonParser:
             amt = extract_number(part)
 
             # Check for Credit
-            if any(w in part_lower for w in ["udhaar", "udhar", "credit", "likh", "उधार", "उधारी", "लिहा"]):
-                name_match = re.search(r"([a-zA-Z\u0900-\u097F]+)\s*(?:ko|la|के|ला|को)", part, re.IGNORECASE)
+            if any(w in part_lower for w in ["udhaar", "udhar", "credit", "likh", "उधार", "उधारी", "लिहा", "saaman liya", "saman liya", "khareeda"]):
+                name_match = re.search(r"([a-zA-Z\u0900-\u097F]+)\s*(?:ko|la|ne|के|ला|को|ने)", part, re.IGNORECASE)
                 cust_name = name_match.group(1).capitalize() if name_match else "Ramesh"
                 if not amt:
                     # Amount missing -> clarification question
