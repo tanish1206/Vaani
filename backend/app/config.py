@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     def is_market_configured(self) -> bool:
         return self.MARKET_SOURCE in ("yfinance", "sample")
 
+    def is_demo_mode(self) -> bool:
+        return bool(self.DEMO_MODE)
+
     def get_service_readiness(self) -> Dict[str, Any]:
         """
         Return safe status for all external service integrations.
