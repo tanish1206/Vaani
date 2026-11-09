@@ -56,9 +56,14 @@ async def handle_voice_turn(request: Request):
         lang_hint=lang_hint
     )
 
-    # 3. Synthesize speech if possible
+    # 3. Synthesize speech with Timbre v2.5
     reply_text = result.get("reply_text", "")
     tts_bytes = await TimbreTTSClient.synthesize(text=reply_text, lang=result.get("language", "hi"))
 
-    result["has_audio_bytes"] = tts_bytes is not None
+    if tts_bytes:
+        result["audio_base64"] = base64.b64encode(tts_bytes).decode("ascii")
+        result["has_audio_bytes"] = True
+    else:
+        result["audio_base64"] = None
+        result["has_audio_bytes"] = False
     return result
