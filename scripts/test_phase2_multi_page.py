@@ -81,7 +81,7 @@ def run_tests():
     masked = d_data.get("masked_credentials", {})
     for key, val in masked.items():
         if val is not None:
-            is_safe = (val == "") or ("*" in val) or (len(val) <= 12 and "..." in val) or val.endswith("****")
+            is_safe = (val == "") or ("*" in val) or ("Not Configured" in val) or (len(val) <= 12 and "..." in val) or val.endswith("****")
             assert_check(f"Masked credential {key}", is_safe, f"-> {val}")
 
     # 4. Connectivity Ping Test
