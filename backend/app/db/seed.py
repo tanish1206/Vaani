@@ -1,8 +1,10 @@
 """
-Seed demo data for VAANI as specified in data-model.md §5.
+Seed data manager for VAANI.
+Enforces strict separation between DEMO fixtures and clean PRODUCTION mode.
 """
 
 from datetime import datetime, timezone
+from app.config import settings
 from app.db.session import get_db, init_db
 
 def normalise_name_key(name: str) -> str:
@@ -23,20 +25,28 @@ def normalise_name_key(name: str) -> str:
     key = "".join(c for c in key if c.isalnum())
     return key
 
-def seed_demo_data():
-    """Populate database with demo customers, seed ledger entries, and market watchlist."""
+def seed_demo_data(force: bool = False):
+    """
+    Populate database with demo customers and sample data ONLY if DEMO_MODE is true.
+    In Production (DEMO_MODE=false), ensures schema exists without mock records.
+    """
     init_db()
     
+    # If production mode and not forced, do not insert demo fixtures
+    if not settings.DEMO_MODE and not force:
+        print("[Database] Running in PRODUCTION mode: clean database initialized, skipping demo fixtures.")
+        return
+
     with get_db() as conn:
         cur = conn.cursor()
         
         # Check if already seeded
         cur.execute("SELECT COUNT(*) FROM customers;")
-        if cur.fetchone()[0] > 0:
-            print("Database already contains customer records. Skipping seed.")
+        if cur.fetchone()[0] > 0 and not force:
+            print("[Database] Customers already exist. Skipping seed.")
             return
 
-        print("Seeding demo data into VAANI database...")
+        print("[Database] Seeding demo data (DEMO_MODE=true)...")
         now = datetime.now(timezone.utc).isoformat()
 
         # 0. Insert seed utterance record to satisfy foreign key
@@ -48,7 +58,7 @@ def seed_demo_data():
             (now,)
         )
 
-        # 1. Seed Customers & Initial Balances
+        # 1. Seed Demo Customers & Opening Balances (Tagged with 'seed')
         seed_customers = [
             ("रमेश", "Ramesh", 65000),      # ₹650
             ("सुनीता", "Sunita", 15000),    # ₹150
@@ -68,7 +78,6 @@ def seed_demo_data():
             )
             customer_id = cur.lastrowid
             
-            # Insert initial credit entry tagged with 'seed'
             cur.execute(
                 """
                 INSERT INTO ledger_entries (customer_id, kind, amount_paise, note, utterance_id, created_at)
@@ -77,9 +86,9 @@ def seed_demo_data():
                 (customer_id, amount_paise, now)
             )
 
-        # 2. Seed Watchlist
+        # 2. Seed Default Watchlist
         watchlist_items = [
-            ("^BSESN", "Sensex", 1),
+            ("^BSESN", "BSE Sensex", 1),
             ("^NSEI", "Nifty 50", 2),
             ("RELIANCE.NS", "Reliance", 3),
             ("TCS.NS", "TCS", 4),
@@ -94,7 +103,7 @@ def seed_demo_data():
                 (symbol, label, pos)
             )
 
-        # 3. Seed Market Cache
+        # 3. Seed Market Cache (Explicitly Tagged is_sample=1 and source='sample')
         market_quotes = [
             ("^BSESN", 83410.20, 342.80, 0.43),
             ("^NSEI", 25480.60, 98.25, 0.39),
@@ -125,7 +134,7 @@ def seed_demo_data():
                 (k, v)
             )
 
-        print("Seeding completed successfully!")
+        print("[Database] Demo seeding completed successfully.")
 
 if __name__ == "__main__":
     seed_demo_data()
