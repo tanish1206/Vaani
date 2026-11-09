@@ -29,9 +29,11 @@ class PrismaSTTClient:
 
         if settings.is_prisma_configured():
             headers = {"X-API-Key-ID": settings.GNANI_API_KEY.strip()}
-            data = {"model": settings.STT_MODEL}
-            if language_code and language_code != "auto":
-                data["language_code"] = language_code
+            effective_lang = language_code if (language_code and language_code != "auto") else (settings.STT_DEFAULT_LANGUAGE or "hi-IN")
+            data = {
+                "model": settings.STT_MODEL,
+                "language_code": effective_lang
+            }
 
             # Determine content type based on file extension
             content_type = "audio/wav"
