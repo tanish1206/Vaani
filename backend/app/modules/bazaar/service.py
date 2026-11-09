@@ -26,9 +26,9 @@ class BazaarService:
     def refresh_quotes_if_needed(cls, conn: sqlite3.Connection):
         """
         Check market cache freshness. If older than 5 minutes and provider is yfinance,
-        attempt live update.
+        attempt live update. In demo mode or if offline, uses cached sample fixtures immediately.
         """
-        if settings.MARKET_SOURCE != "yfinance":
+        if settings.MARKET_SOURCE != "yfinance" or settings.DEMO_MODE:
             return
 
         cur = conn.cursor()
@@ -48,8 +48,11 @@ class BazaarService:
         if not needs_refresh:
             return
 
-        # Attempt yfinance live fetch
+        # Attempt yfinance live fetch with short socket timeout to prevent hang if offline
+        import socket
+        prev_timeout = socket.getdefaulttimeout()
         try:
+            socket.setdefaulttimeout(2.0)
             import yfinance as yf
             cur.execute("SELECT symbol FROM watchlist;")
             symbols = [r["symbol"] for r in cur.fetchall()]
@@ -84,9 +87,11 @@ class BazaarService:
                             (sym, round(price, 2), change_abs, change_pct, now.isoformat())
                         )
                 except Exception as sym_err:
-                    print(f"[Market Live Error] {sym}: {sym_err}")
+                    print(f"[Bazaar] Live fetch skipped for {sym}: {sym_err}")
         except Exception as e:
-            print(f"[Market Data Provider Offline] {e}")
+            print(f"[Bazaar] Live market refresh skipped (offline or timeout): {e}")
+        finally:
+            socket.setdefaulttimeout(prev_timeout)
 
     @classmethod
     def market_snapshot(cls, scope: str = "overview", symbols: Optional[List[str]] = None,

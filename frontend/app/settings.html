@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings & Diagnostics — VAANI (बोलिए. वाणी संभाल लेगी.)</title>
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/app-shell.css">
+  <link rel="stylesheet" href="/styles/agent-component.css">
+  <style>
+    /* Dedicated Settings Styles */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    
+    .settings-nav-tabs {
+      display: flex;
+      gap: 12px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .settings-tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 18px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: var(--radius-pill);
+      transition: all var(--dur-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .settings-tab-btn:hover {
+      color: var(--aubergine);
+      background: var(--ice-50);
+    }
+    
+    .settings-tab-btn.active {
+      color: var(--aubergine);
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .tab-content-panel {
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .tab-content-panel.active {
+      display: flex;
+    }
+    
+    /* Preference Row */
+    .preference-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 20px;
+    }
+    
+    .preference-row:last-child {
+      border-bottom: none;
+    }
+    
+    .preference-info {
+      max-width: 65%;
+    }
+    
+    .preference-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--aubergine);
+      margin-bottom: 4px;
+    }
+    
+    .preference-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    
+    .preference-control {
+      min-width: 180px;
+      text-align: right;
+    }
+    
+    .select-dropdown {
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      font-size: 13.5px;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      width: 100%;
+      max-width: 220px;
+    }
+    
+    .select-dropdown:focus {
+      border-color: var(--marigold);
+      box-shadow: 0 0 0 3px rgba(234, 170, 0, 0.15);
+    }
+    
+    /* Diagnostics Cards */
+    .diag-readiness-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    
+    .diag-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    
+    .diag-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .diag-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--aubergine);
+    }
+    
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .status-badge.live {
+      background: #E8F5E9;
+      color: #2E7D32;
+      border: 1px solid #A5D6A7;
+    }
+    
+    .status-badge.fallback {
+      background: #FFF8E1;
+      color: #F57F17;
+      border: 1px solid #FFE082;
+    }
+    
+    .status-badge.sample {
+      background: #EDE7F6;
+      color: #512DA8;
+      border: 1px solid #D1C4E9;
+    }
+    
+    .diag-detail-line {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .diag-detail-val {
+      font-weight: 600;
+      color: var(--aubergine);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .masked-key-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--ice-50);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      color: var(--aubergine);
+    }
+    
+    .action-banner {
+      background: var(--surface-ivory);
+      border: 1px solid var(--marigold-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--aubergine);
+      color: #FFFFFF;
+      padding: 12px 24px;
+      border-radius: var(--radius-pill);
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: var(--shadow-elevated);
+      transition: transform var(--dur-normal) var(--ease-out);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .toast-msg.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR NAVIGATION -->
+  <header class="global-topbar">
+    <div class="topbar-brand-area">
+      <a href="/" class="brand-logo-link">VAANI</a>
+      <span class="brand-tagline-chip">बोलिए. वाणी संभाल लेगी.</span>
+    </div>
+    
+    <nav class="topbar-nav-links">
+      <a href="/app" class="topbar-nav-item">Overview</a>
+      <a href="/app/bol-khata" class="topbar-nav-item">Bol-Khata</a>
+      <a href="/app/parchi" class="topbar-nav-item">Parchi</a>
+      <a href="/app/sensex-awaaz" class="topbar-nav-item">Sensex Awaaz</a>
+      <a href="/app/settings" class="topbar-nav-item active">Settings</a>
+    </nav>
+
+    <div class="topbar-utility-actions">
+      <div id="demoModeIndicator" class="utility-chip-btn" style="background: var(--ice-50);">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#2E7D32;"></span>
+        <span id="demoModeText">Demo Mode: ON</span>
+      </div>
+      <a href="/" class="utility-chip-btn" title="Back to Landing Page">
+        <span>← Home</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="page-workspace-container">
+    <div class="workspace-main-panel">
+      
+      <!-- Page Title -->
+      <div class="page-title-banner">
+        <div>
+          <h1 class="page-title-heading">Settings & Diagnostics</h1>
+          <p class="page-subtitle-text">Manage application preferences, speech engines, and inspect system readiness.</p>
+        </div>
+      </div>
+
+      <!-- Settings Tabs -->
+      <div class="settings-nav-tabs">
+        <button class="settings-tab-btn active" id="tabBtnShopkeeper" onclick="switchSettingsTab('shopkeeper')">
+          <span>🏪</span> Shopkeeper Preferences
+        </button>
+        <button class="settings-tab-btn" id="tabBtnDiagnostics" onclick="switchSettingsTab('diagnostics')">
+          <span>🔬</span> Evaluator & AI Readiness
+        </button>
+      </div>
+
+      <!-- TAB 1: SHOPKEEPER PREFERENCES -->
+      <div class="tab-content-panel active" id="tabShopkeeper">
+        <div class="content-box-card">
+          <div class="content-box-header">
+            <h2 class="content-box-title">Voice & Interaction Preferences</h2>
+          </div>
+
+          <div class="preference-row">
+            <div class="preference-info">
+              <div class="preference-title">Primary Language (भाषा चयन)</div>
+              <div class="preference-desc">Select preferred spoken language for replies or use auto-detect across Hindi, Marathi, and Hinglish.</div>
+            </div>
+            <div class="preference-control">
+              <select id="prefLanguage" class="select-dropdown">
+                <option value="auto">Auto-detect (स्वतः पहचान)</option>
+                <option value="hi">Hindi (हिन्दी)</option>
+                <option value="mr">Marathi (मराठी)</option>
+                <option value="en">English (Indian)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preference-row">
+            <div class="preference-info">
+              <div class="preference-title">Spoken Voice (आवाज़ चयन)</div>
+              <div class="preference-desc">Voice persona powered by Gnani Timbre v2.5 with natural cadence.</div>
+            </div>
+            <div class="preference-control">
+              <select id="prefVoice" class="select-dropdown">
+                <option value="sia">Sia (Default — Warm Indian Voice)</option>
+                <option value="kabir">Kabir (Authoritative & Clear)</option>
+                <option value="priya">Priya (Soft & Patient)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preference-row">
+            <div class="preference-info">
+              <div class="preference-title">Speech Rate (बोलने की गति)</div>
+              <div class="preference-desc">Adjust how fast Vaani speaks ledger confirmations and market summaries.</div>
+            </div>
+            <div class="preference-control">
+              <select id="prefRate" class="select-dropdown">
+                <option value="0.9">0.9x (धीमी / Clear)</option>
+                <option value="1.0" selected>1.0x (सामान्य / Normal)</option>
+                <option value="1.1">1.1x (तेज़ / Swift)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preference-row">
+            <div class="preference-info">
+              <div class="preference-title">High-Value Confirmation Threshold (पुष्टि सीमा)</div>
+              <div class="preference-desc">Transactions equal to or above this amount will require spoken confirmation before execution.</div>
+            </div>
+            <div class="preference-control">
+              <input type="number" id="prefConfirmThreshold" class="form-input" style="width: 140px; text-align: right;" value="5000" step="500">
+              <span style="font-size: 13px; margin-left: 4px; color: var(--text-muted);">₹</span>
+            </div>
+          </div>
+
+          <div class="preference-row">
+            <div class="preference-info">
+              <div class="preference-title">Medicine Reminder Snooze (दवा स्नूज़ समय)</div>
+              <div class="preference-desc">Default minutes to snooze medicine alerts when requested verbally or via button.</div>
+            </div>
+            <div class="preference-control">
+              <select id="prefSnooze" class="select-dropdown">
+                <option value="5">5 minutes</option>
+                <option value="10" selected>10 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preference-row">
+            <div class="preference-info">
+              <div class="preference-title">Privacy & Processing Mode (गोपनीयता मोड)</div>
+              <div class="preference-desc">Choose between balanced cloud-assisted processing with offline fallback or strict local-only execution.</div>
+            </div>
+            <div class="preference-control">
+              <select id="prefPrivacy" class="select-dropdown">
+                <option value="balanced">Balanced (Gnani Cloud + Offline Fallback)</option>
+                <option value="strict_local">Strict Local (Rule Engine & Browser TTS Only)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="padding: 20px 24px; display: flex; justify-content: flex-end; background: var(--ice-50); border-top: 1px solid var(--border);">
+            <button class="btn-primary-action" onclick="saveShopkeeperSettings()">
+              ✓ Save Preferences
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SYSTEM & AI READINESS DIAGNOSTICS -->
+      <div class="tab-content-panel" id="tabDiagnostics">
+        
+        <!-- Live AI Readiness Cards -->
+        <div>
+          <h2 style="font-family: var(--font-display); font-size: 18px; color: var(--aubergine); margin-bottom: 12px;">AI Subsystem Readiness (Engine Diagnostics)</h2>
+          <div class="diag-readiness-grid">
+            
+            <!-- STT -->
+            <div class="diag-card">
+              <div class="diag-card-header">
+                <span class="diag-title">Speech-to-Text (STT)</span>
+                <span id="badgeStt" class="status-badge fallback">Checking...</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Engine</span>
+                <span class="diag-detail-val">Gnani Prisma v3.0</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Active Mode</span>
+                <span id="sttMode" class="diag-detail-val">—</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Credential</span>
+                <span id="sttKey" class="masked-key-chip">—</span>
+              </div>
+            </div>
+
+            <!-- Intent Understanding -->
+            <div class="diag-card">
+              <div class="diag-card-header">
+                <span class="diag-title">Intent Parser (NLU)</span>
+                <span id="badgeIntent" class="status-badge fallback">Checking...</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Engine</span>
+                <span class="diag-detail-val">Gnani Evon v3.3</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Active Mode</span>
+                <span id="intentMode" class="diag-detail-val">—</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Credential</span>
+                <span id="intentKey" class="masked-key-chip">—</span>
+              </div>
+            </div>
+
+            <!-- TTS -->
+            <div class="diag-card">
+              <div class="diag-card-header">
+                <span class="diag-title">Voice Synthesis (TTS)</span>
+                <span id="badgeTts" class="status-badge fallback">Checking...</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Engine</span>
+                <span class="diag-detail-val">Gnani Timbre v2.5</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Active Mode</span>
+                <span id="ttsMode" class="diag-detail-val">—</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Voice Persona</span>
+                <span class="diag-detail-val">Sia (Indian En/Hi)</span>
+              </div>
+            </div>
+
+            <!-- Market Feed -->
+            <div class="diag-card">
+              <div class="diag-card-header">
+                <span class="diag-title">Market Intelligence</span>
+                <span id="badgeMarket" class="status-badge sample">Checking...</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Provider</span>
+                <span class="diag-detail-val">Yahoo Finance / NSE</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Active Feed</span>
+                <span id="marketSource" class="diag-detail-val">—</span>
+              </div>
+              <div class="diag-detail-line">
+                <span>Cache Policy</span>
+                <span class="diag-detail-val">5m SQLite TTL</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Database Health & Verification -->
+        <div class="content-box-card">
+          <div class="content-box-header">
+            <h2 class="content-box-title">Local Database Architecture & Integrity</h2>
+            <span class="status-badge live" id="badgeDbWal">WAL Mode Active</span>
+          </div>
+          <div style="padding: 20px 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight:700;">Database Engine</div>
+                <div style="font-size: 16px; font-weight: 700; color: var(--aubergine); margin-top: 4px;">SQLite 3 (Local-First)</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight:700;">Foreign Key Constraints</div>
+                <div id="dbFkStatus" style="font-size: 16px; font-weight: 700; color: #2E7D32; margin-top: 4px;">Enforced (ON)</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight:700;">File Path</div>
+                <div id="dbPathVal" style="font-size: 13px; font-family:'JetBrains Mono', monospace; color: var(--aubergine); margin-top: 4px; word-break: break-all;">—</div>
+              </div>
+            </div>
+
+            <!-- Table Record Statistics -->
+            <div style="background: var(--ice-50); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px;">
+              <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--aubergine-70); margin-bottom: 8px;">Active Table Row Counts</div>
+              <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <div><span style="color: var(--text-muted); font-size: 13px;">Customers:</span> <strong id="cntCustomers" style="font-family:'JetBrains Mono';">0</strong></div>
+                <div><span style="color: var(--text-muted); font-size: 13px;">Ledger Entries:</span> <strong id="cntEntries" style="font-family:'JetBrains Mono';">0</strong></div>
+                <div><span style="color: var(--text-muted); font-size: 13px;">Prescriptions:</span> <strong id="cntPrescriptions" style="font-family:'JetBrains Mono';">0</strong></div>
+                <div><span style="color: var(--text-muted); font-size: 13px;">Reminders:</span> <strong id="cntReminders" style="font-family:'JetBrains Mono';">0</strong></div>
+                <div><span style="color: var(--text-muted); font-size: 13px;">Watchlist:</span> <strong id="cntWatchlist" style="font-family:'JetBrains Mono';">0</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connectivity Test & Actions Banner -->
+        <div class="action-banner">
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--aubergine);">System Diagnostic Pings</div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Perform instant latency test across database, financial market cache, and speech engines.</div>
+            <div id="connectivityResult" style="font-size: 12.5px; font-family:'JetBrains Mono', monospace; margin-top: 8px; color: var(--aubergine); display: none;"></div>
+          </div>
+          <button class="btn-primary-action" id="btnTestConn" onclick="runConnectivityTest()">
+            ⚡ Test Subsystem Latency
+          </button>
+        </div>
+
+        <!-- Data Sovereignty Statement -->
+        <div class="content-box-card">
+          <div class="content-box-header">
+            <h2 class="content-box-title">🛡️ Data Sovereignty & Shopkeeper Security Guarantees</h2>
+          </div>
+          <div style="padding: 20px 24px; font-size: 13.5px; line-height: 1.6; color: var(--text);">
+            <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+              <li><strong>Zero Permanent Audio Storage:</strong> Voice turns are processed in volatile memory. Raw audio files are discarded immediately after transcription.</li>
+              <li><strong>Local Ledger Sovereignty:</strong> Customer balances, debt transactions, and medical reminders are stored in local SQLite without external cloud replication.</li>
+              <li><strong>Deterministic Fallback:</strong> In no-internet environments or when API credentials are absent, rule-based natural language parsers handle all standard Hindi, Marathi, and English commands.</li>
+              <li><strong>Credential Safety:</strong> API tokens are stored server-side in <code>.env</code> and masked in all diagnostic outputs. Zero secrets are transmitted to the browser.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Reset Demo Fixtures for Evaluators -->
+        <div class="action-banner" style="border-color: #FFCDD2; background: #FFEBEE;">
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: #B71C1C;">Evaluator Demo Reset (डेमो रीसेट)</div>
+            <div style="font-size: 13px; color: #5D4037; margin-top: 2px;">Reset ledger balances, prescriptions, and market cache back to clean initial demo fixtures.</div>
+          </div>
+          <button class="btn-secondary-action" style="background: #FFFFFF; border-color: #EF9A9A; color: #B71C1C;" onclick="openResetModal()">
+            🔄 Reset Demo Data
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- CONTEXTUAL AGENT PANEL (SHARED ON ALL PAGES) -->
+    <aside class="workspace-agent-panel">
+      <div id="vaaniAgentContainer"></div>
+    </aside>
+  </main>
+
+  <!-- CONFIRM RESET MODAL -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal-card">
+      <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--aubergine); margin-bottom: 12px;">Confirm Demo Reset</h3>
+      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+        This will clear all transactions, customer balances, and prescriptions, and reload the default 5 demo customers (Ramesh, Sunita, Patil, Ganesh, Shinde) and sample medicines.
+      </p>
+      <div class="form-actions">
+        <button class="btn-secondary-action" onclick="closeResetModal()">Cancel</button>
+        <button class="btn-primary-action" style="background:#B71C1C;" onclick="executeResetDemo()">Confirm Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-msg" id="toastMsg">
+    <span id="toastIcon">✓</span>
+    <span id="toastText">Settings saved successfully</span>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="/js/agent-component.js"></script>
+  <script src="/js/settings-page.js"></script>
+  <script>
+    // Initialize Vaani Contextual Agent for Settings Page
+    document.addEventListener("DOMContentLoaded", () => {
+      const agent = new VaaniAgent({
+        containerId: "vaaniAgentContainer",
+        moduleScope: "settings",
+        welcomeMessage: "नमस्ते! यहाँ आप अपनी भाषा, आवाज़, और AI तत्परता जांच सकते हैं। बोलकर भी निर्देश दे सकते हैं।",
+        suggestedChips: [
+          "आवाज़ बदलें",
+          "सिस्टम स्थिति बताओ",
+          "डेमो रीसेट करो",
+          "रमेश का खाता खोलो"
+        ]
+      });
+      window.vaaniAgent = agent;
+    });
+  </script>
+</body>
+</html>

@@ -217,11 +217,18 @@
           }
 
           // Service Readiness Badges
-          if (health.services) {
-            document.getElementById('status-prisma-badge').textContent = health.services.prisma.status;
-            document.getElementById('status-evon-badge').textContent = health.services.evon.status;
-            document.getElementById('status-timbre-badge').textContent = health.services.timbre.status;
-            document.getElementById('status-market-badge').textContent = health.services.market_data.provider;
+          const readiness = health.service_readiness || health.services || {};
+          if (readiness.stt) {
+            document.getElementById('status-prisma-badge').textContent = readiness.stt.configured ? 'Live Cloud' : 'Web Speech';
+          }
+          if (readiness.intent_understanding) {
+            document.getElementById('status-evon-badge').textContent = readiness.intent_understanding.configured ? 'Live Evon' : 'Rules Active';
+          }
+          if (readiness.tts) {
+            document.getElementById('status-timbre-badge').textContent = readiness.tts.configured ? 'Live Timbre' : 'Browser Web Speech';
+          }
+          if (readiness.market_data) {
+            document.getElementById('status-market-badge').textContent = readiness.market_data.is_sample ? 'Sample Fixture' : 'Live Feeds';
           }
         } catch (e) {
           console.error('Error loading overview data:', e);

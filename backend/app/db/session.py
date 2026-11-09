@@ -14,11 +14,10 @@ DB_FILE = Path(settings.DB_PATH)
 SCHEMA_FILE = Path(__file__).resolve().parent / "schema.sql"
 
 def get_connection() -> sqlite3.Connection:
-    """Create a connection to the SQLite database with WAL mode and row factory."""
+    """Create a connection to the SQLite database with foreign keys and row factory."""
     DB_FILE.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_FILE), check_same_thread=False, timeout=10.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 

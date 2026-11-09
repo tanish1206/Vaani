@@ -120,7 +120,55 @@ def seed_demo_data(force: bool = False):
                 (sym, price, chg_abs, chg_pct, now)
             )
 
-        # 4. Seed Settings
+        # 4. Seed Demo Prescriptions & Reminders if empty
+        cur.execute("SELECT COUNT(*) FROM prescriptions;")
+        if cur.fetchone()[0] == 0:
+            today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            cur.execute(
+                """
+                INSERT INTO prescriptions (patient_label, doctor_note, start_date, duration_days, status, utterance_id, created_at)
+                VALUES ('दादी जी (Dadi Ji)', 'Dr. Sharma - General Checkup', ?, 5, 'active', 'seed', ?);
+                """,
+                (today_str, now)
+            )
+            presc_id = cur.lastrowid
+            
+            # Medicine 1: Amlodipine 5mg
+            cur.execute(
+                """
+                INSERT INTO medicines (prescription_id, name, dose_text, with_food, times_json)
+                VALUES (?, 'Amlodipine 5mg', '1 goli naashte ke baad', 'after', '["morning"]');
+                """,
+                (presc_id,)
+            )
+            m1_id = cur.lastrowid
+            
+            # Medicine 2: Multivitamin
+            cur.execute(
+                """
+                INSERT INTO medicines (prescription_id, name, dose_text, with_food, times_json)
+                VALUES (?, 'Multivitamin', '1 capsule dopahar khaane ke baad', 'after', '["afternoon"]');
+                """,
+                (presc_id,)
+            )
+            m2_id = cur.lastrowid
+            
+            # Medicine 3: Calcium + D3
+            cur.execute(
+                """
+                INSERT INTO medicines (prescription_id, name, dose_text, with_food, times_json)
+                VALUES (?, 'Calcium + D3', '1 tablet raat ko doodh ke saath', 'after', '["night"]');
+                """,
+                (presc_id,)
+            )
+            m3_id = cur.lastrowid
+            
+            # Reminders for today
+            cur.execute("INSERT INTO reminders (medicine_id, due_at, status) VALUES (?, ?, 'pending');", (m1_id, f"{today_str}T08:00:00Z"))
+            cur.execute("INSERT INTO reminders (medicine_id, due_at, status) VALUES (?, ?, 'pending');", (m2_id, f"{today_str}T13:30:00Z"))
+            cur.execute("INSERT INTO reminders (medicine_id, due_at, status) VALUES (?, ?, 'pending');", (m3_id, f"{today_str}T21:30:00Z"))
+
+        # 5. Seed Settings
         default_settings = [
             ("language", "auto"),
             ("voice_hi", "sia"),
@@ -135,6 +183,22 @@ def seed_demo_data(force: bool = False):
             )
 
         print("[Database] Demo seeding completed successfully.")
+
+def reset_demo_data():
+    """Clear all transactional records and reseed demo data."""
+    init_db()
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM reminders;")
+        cur.execute("DELETE FROM medicines;")
+        cur.execute("DELETE FROM prescriptions;")
+        cur.execute("DELETE FROM ledger_entries;")
+        cur.execute("DELETE FROM customers;")
+        cur.execute("DELETE FROM watchlist;")
+        cur.execute("DELETE FROM market_cache;")
+        cur.execute("DELETE FROM utterances;")
+    seed_demo_data(force=True)
+    return {"status": "reset", "message": "Demo data has been reset to defaults"}
 
 if __name__ == "__main__":
     seed_demo_data()

@@ -11,10 +11,10 @@
   class VaaniAgent {
     constructor(options = {}) {
       this.containerId = options.containerId;
-      this.moduleId = options.moduleId || 'overview'; // 'khata' | 'parchi' | 'bazaar' | 'overview'
-      this.moduleTitle = options.moduleTitle || 'Vaani Assistant';
-      this.initialGreeting = options.initialGreeting || 'Namaste! Main Vaani hoon. Boliye, main sun rahi hoon.';
-      this.quickPhrases = options.quickPhrases || [];
+      this.moduleId = options.moduleId || options.moduleScope || 'overview'; // 'khata' | 'parchi' | 'bazaar' | 'settings' | 'overview'
+      this.moduleTitle = options.moduleTitle || (this.moduleId === 'settings' ? 'Vaani Settings & Diagnostics' : 'Vaani Assistant');
+      this.initialGreeting = options.initialGreeting || options.welcomeMessage || 'Namaste! Main Vaani hoon. Boliye, main sun rahi hoon.';
+      this.quickPhrases = options.quickPhrases || options.suggestedChips || [];
       this.onActionExecuted = options.onActionExecuted || (() => {});
 
       this.isRecording = false;
@@ -38,6 +38,7 @@
         khata: 'Bol-Khata Scope',
         parchi: 'Parchi Scope',
         bazaar: 'Sensex Awaaz Scope',
+        settings: 'Settings Scope',
         overview: 'Global Scope'
       }[this.moduleId] || 'Active';
 

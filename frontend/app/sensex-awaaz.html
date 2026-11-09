@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensex Awaaz — Spoken Market Intelligence | VAANI</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23EAAA00'/><text x='50' y='65' font-size='52' font-family='serif' font-weight='bold' fill='%233A0F34' text-anchor='middle'>व</text></svg>">
+  
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/app-shell.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/agent-component.css">
+</head>
+<body>
+
+  <!-- GLOBAL TOPBAR -->
+  <header class="global-topbar">
+    <div class="topbar-brand-area">
+      <a href="/" class="brand-logo-link">VAANI</a>
+      <span class="brand-tagline-chip">सेंसेक्स आवाज़ &bull; Market Briefings</span>
+    </div>
+
+    <nav class="topbar-nav-links">
+      <a href="/app" class="topbar-nav-item">Overview</a>
+      <a href="/app/bol-khata" class="topbar-nav-item">Bol-Khata</a>
+      <a href="/app/parchi" class="topbar-nav-item">Parchi</a>
+      <a href="/app/sensex-awaaz" class="topbar-nav-item active">Sensex Awaaz</a>
+      <a href="/app/settings" class="topbar-nav-item">Settings</a>
+    </nav>
+
+    <div class="topbar-utility-actions">
+      <button id="btn-open-add-stock" class="btn-primary-action" style="padding: 6px 14px; font-size: 13px;">
+        + Stock Jodein
+      </button>
+      <button id="btn-play-brief" class="utility-chip-btn" style="font-weight: 700;">
+        🔊 Spoken Brief
+      </button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <div class="page-workspace-container">
+    
+    <!-- LEFT: MAIN SENSEX AWAAZ CONTENT -->
+    <main class="workspace-main-panel">
+      <!-- Title & Freshness Banner -->
+      <div class="page-title-banner">
+        <div>
+          <h1 class="page-title-heading">Sensex Awaaz (सेंसेक्स आवाज़)</h1>
+          <p class="page-subtitle-text">
+            Bhartiya share bazaar ke index aur shares ka aam bhasha mein boli hui summary.
+          </p>
+        </div>
+        <div>
+          <span id="freshness-badge" style="font-size: 12px; font-weight: 700; background: var(--marigold-100); color: var(--aubergine); border: 1px solid var(--marigold); padding: 4px 12px; border-radius: var(--radius-pill);">
+            Fetching status...
+          </span>
+        </div>
+      </div>
+
+      <!-- Compliance Disclaimer -->
+      <div style="background: rgba(58, 15, 52, 0.05); border-left: 4px solid var(--aubergine); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 12px; color: var(--text-muted);">
+        <strong>Jaankari ke liye &bull; Nivesh salaah nahin:</strong> Vaani kisi share ko khareedne ya bechne ki salaah nahi deta. Kisi bhi nivesh ke liye SEBI-registered financial advisor se consult karein.
+      </div>
+
+      <!-- Indices Cards (Sensex & Nifty) -->
+      <div class="bazaar-indices-row" style="margin-bottom: 0;">
+        <div class="index-tile">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--aubergine-70);">BSE SENSEX</span>
+            <span style="font-size: 11px; color: var(--text-subtle);">^BSESN</span>
+          </div>
+          <div id="page-sensex-price" style="font-size: 36px; font-weight: 700; color: var(--aubergine); margin: 8px 0;">83,410.20</div>
+          <div id="page-sensex-delta" style="font-size: 14.5px; font-weight: 700; color: var(--success);">&#9650; +342.80 (+0.43%)</div>
+        </div>
+
+        <div class="index-tile">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--aubergine-70);">NIFTY 50</span>
+            <span style="font-size: 11px; color: var(--text-subtle);">^NSEI</span>
+          </div>
+          <div id="page-nifty-price" style="font-size: 36px; font-weight: 700; color: var(--aubergine); margin: 8px 0;">25,480.60</div>
+          <div id="page-nifty-delta" style="font-size: 14.5px; font-weight: 700; color: var(--success);">&#9650; +98.25 (+0.39%)</div>
+        </div>
+      </div>
+
+      <!-- Market Movement Candlestick Visualizer Card -->
+      <div class="content-box-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 19px; color: var(--aubergine);">Market Movement Spectrum</h3>
+            <span style="font-size: 12px; color: var(--text-muted);">High-end typography, subtle shadows, controlled glass</span>
+          </div>
+          <span style="font-size: 11px; color: var(--text-subtle);" id="chart-timestamp">Updated: Today</span>
+        </div>
+
+        <div class="sensex-candle-chart" id="candle-chart-container" style="height: 110px;">
+          <div class="candle-bar up" style="height: 40%;"></div>
+          <div class="candle-bar down" style="height: 25%;"></div>
+          <div class="candle-bar up" style="height: 65%;"></div>
+          <div class="candle-bar up" style="height: 80%;"></div>
+          <div class="candle-bar down" style="height: 45%;"></div>
+          <div class="candle-bar up" style="height: 90%;"></div>
+          <div class="candle-bar down" style="height: 55%;"></div>
+          <div class="candle-bar up" style="height: 75%;"></div>
+          <div class="candle-bar up" style="height: 85%;"></div>
+          <div class="candle-bar down" style="height: 60%;"></div>
+          <div class="candle-bar up" style="height: 95%;"></div>
+          <div class="candle-bar up" style="height: 70%;"></div>
+        </div>
+      </div>
+
+      <!-- Spoken Brief Player Card -->
+      <div class="content-box-card" style="padding: 20px 24px; background: var(--surface-ledger);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--marigold-600); letter-spacing: 0.05em;">
+            Spoken Audio Briefing (Boli hui Summary)
+          </span>
+          <button id="btn-replay-brief" class="utility-chip-btn" style="padding: 3px 10px; font-size: 11px;">
+            🔊 Replay
+          </button>
+        </div>
+        <p id="spoken-brief-text" style="font-size: 15px; font-weight: 600; color: var(--aubergine); line-height: 1.5;">
+          "Sensex aaj 83,410 par 342 point upar band hua. Nifty 25,480 par mazboot tha. Yeh sample data hai, nivesh salaah nahi."
+        </p>
+      </div>
+
+      <!-- Personal Watchlist Table Card -->
+      <div class="content-box-card">
+        <div class="content-box-header">
+          <div>
+            <span class="content-box-title">Personal Stock Watchlist</span>
+            <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px;">(Live &amp; Cached Quotes)</span>
+          </div>
+          <button id="btn-refresh-market" class="utility-chip-btn">🔄 Refresh Quotes</button>
+        </div>
+
+        <table class="ledger-table-full">
+          <thead>
+            <tr>
+              <th scope="col">Company / Index</th>
+              <th scope="col">Symbol</th>
+              <th scope="col">LTP (Price)</th>
+              <th scope="col">Change</th>
+              <th scope="col">As Of</th>
+              <th scope="col">Source</th>
+            </tr>
+          </thead>
+          <tbody id="page-watchlist-tbody">
+            <!-- Populated dynamically via sensex-page.js -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- RIGHT: DEDICATED CONTEXTUAL SENSEX AWAAZ AGENT -->
+    <aside class="workspace-agent-panel">
+      <div id="bazaar-agent-container" style="height: 100%;"></div>
+    </aside>
+
+  </div>
+
+  <!-- Manual Add Stock Dialog Modal -->
+  <div id="modal-add-stock" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--aubergine); margin-bottom: 16px;">
+        Stock Watchlist Mein Jodein
+      </h3>
+      <form id="form-add-stock">
+        <div class="form-group">
+          <label class="form-label">Stock Symbol / Company Name</label>
+          <input type="text" id="stock-symbol-input" class="form-input" required placeholder="e.g. INFY, SBIN, WIPRO" />
+          <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">NSE symbols automatically append .NS</span>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary-action" id="btn-cancel-stock">Cancel</button>
+          <button type="submit" class="btn-primary-action">Watchlist Mein Jodein</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/agent-component.js"></script>
+  <script src="/js/sensex-page.js"></script>
+</body>
+</html>
