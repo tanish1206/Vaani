@@ -10,7 +10,7 @@ from typing import Dict, Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.config import settings
+from app.config import settings, mask_credential
 from app.db.session import get_db
 from app.db.seed import reset_demo_data
 from app.modules.bazaar.service import BazaarService
@@ -92,9 +92,9 @@ async def get_diagnostics():
         "demo_mode": settings.is_demo_mode(),
         "ai_readiness": ai_readiness,
         "masked_credentials": {
-            "GNANI_API_KEY": settings.GNANI_API_KEY_MASKED,
-            "EVON_API_KEY": settings.EVON_API_KEY_MASKED,
-            "TIMBRE_API_KEY": settings.TIMBRE_API_KEY_MASKED
+            "GNANI_API_KEY": mask_credential(settings.GNANI_API_KEY),
+            "EVON_API_KEY": mask_credential(settings.EVON_API_KEY),
+            "TIMBRE_API_KEY": mask_credential(settings.GNANI_API_KEY)
         },
         "database": {
             "path": db_path,

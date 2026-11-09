@@ -91,6 +91,18 @@ class Settings(BaseSettings):
     def is_demo_mode(self) -> bool:
         return bool(self.DEMO_MODE)
 
+    @property
+    def GNANI_API_KEY_MASKED(self) -> str:
+        return mask_credential(self.GNANI_API_KEY)
+
+    @property
+    def EVON_API_KEY_MASKED(self) -> str:
+        return mask_credential(self.EVON_API_KEY)
+
+    @property
+    def TIMBRE_API_KEY_MASKED(self) -> str:
+        return mask_credential(self.GNANI_API_KEY)
+
     def get_service_readiness(self) -> Dict[str, Any]:
         """
         Return safe status for all external service integrations.
