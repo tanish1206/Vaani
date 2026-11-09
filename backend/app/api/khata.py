@@ -88,4 +88,4 @@ async def add_manual_transaction(req: TransactionRequest):
 @router.post("/undo")
 async def undo_transaction(req: UndoRequest):
     """Undo the most recent transaction in the session."""
-    return KhataService.undo_last_turn(session_id=req.session_id or "default")
+    return KhataService.undo_last(session_id=req.session_id or "default")
