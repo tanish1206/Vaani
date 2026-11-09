@@ -108,20 +108,24 @@ class Settings(BaseSettings):
         Return safe status for all external service integrations.
         Never reveals secret API keys.
         """
-        return {
+        readiness = {
             "prisma": {
                 "status": "Configured" if self.is_prisma_configured() else "Missing",
                 "endpoint": f"{self.GNANI_BASE_URL.rstrip('/')}/stt/v3",
                 "model": self.STT_MODEL,
                 "api_key_masked": mask_credential(self.GNANI_API_KEY),
-                "is_active": self.is_prisma_configured()
+                "is_active": self.is_prisma_configured(),
+                "configured": self.is_prisma_configured(),
+                "mode": "live" if self.is_prisma_configured() else "fallback"
             },
             "evon": {
                 "status": "Configured" if self.is_evon_configured() else "Missing",
                 "endpoint": f"{self.EVON_BASE_URL.rstrip('/')}/v1/chat/completions",
                 "model": self.EVON_MODEL,
                 "fallback_parser": "Deterministic Multilingual Rules Parser (Active)",
-                "is_active": self.is_evon_configured()
+                "is_active": self.is_evon_configured(),
+                "configured": self.is_evon_configured(),
+                "mode": "live" if self.is_evon_configured() else "fallback"
             },
             "timbre": {
                 "status": "Configured" if self.is_timbre_configured() else "Missing",
@@ -130,12 +134,15 @@ class Settings(BaseSettings):
                 "default_voice": self.TTS_VOICE_HI,
                 "fallback_engine": "Browser Web Speech API (Active)",
                 "api_key_masked": mask_credential(self.GNANI_API_KEY),
-                "is_active": self.is_timbre_configured()
+                "is_active": self.is_timbre_configured(),
+                "configured": self.is_timbre_configured(),
+                "mode": "live" if self.is_timbre_configured() else "fallback"
             },
             "market_data": {
                 "status": "Configured",
                 "provider": self.MARKET_SOURCE,
                 "is_live": self.MARKET_SOURCE == "yfinance",
+                "is_sample": self.MARKET_SOURCE != "yfinance" or self.DEMO_MODE,
                 "auto_cache_ttl_sec": 300
             },
             "environment": {
@@ -144,5 +151,9 @@ class Settings(BaseSettings):
                 "database_path": self.DB_PATH
             }
         }
+        readiness["stt"] = readiness["prisma"]
+        readiness["intent_understanding"] = readiness["evon"]
+        readiness["tts"] = readiness["timbre"]
+        return readiness
 
 settings = Settings()
