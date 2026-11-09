@@ -1,13 +1,26 @@
 """
 Bol-Khata REST API endpoints.
-Provides customer ledger balances, transaction history, summaries, and top debtors.
+Provides customer ledger balances, transaction history, summaries, top debtors,
+and manual transaction/undo actions.
 """
 
+from typing import Optional
 from fastapi import APIRouter
+from pydantic import BaseModel
 from app.db.session import get_db
 from app.modules.khata.service import KhataService
 
 router = APIRouter(prefix="/api/v1/khata", tags=["Bol-Khata"])
+
+class TransactionRequest(BaseModel):
+    customer_name: str
+    kind: str  # 'CREDIT' or 'PAYMENT'
+    amount: float
+    note: Optional[str] = None
+    session_id: Optional[str] = "default"
+
+class UndoRequest(BaseModel):
+    session_id: Optional[str] = "default"
 
 @router.get("/customers")
 async def get_customers():
@@ -50,3 +63,29 @@ async def get_top_debtors():
     """Get top 5 customers with highest unpaid credit."""
     return KhataService.top_debtors(limit=5)
 
+@router.post("/transaction")
+async def add_manual_transaction(req: TransactionRequest):
+    """Add credit or payment manually via form."""
+    k = req.kind.strip().upper()
+    if k == "CREDIT":
+        res = KhataService.add_credit(
+            customer_name=req.customer_name,
+            amount=req.amount,
+            note=req.note,
+            session_id=req.session_id or "default"
+        )
+    elif k in ("PAYMENT", "JAMA"):
+        res = KhataService.add_payment(
+            customer_name=req.customer_name,
+            amount=req.amount,
+            note=req.note,
+            session_id=req.session_id or "default"
+        )
+    else:
+        return {"error": f"Invalid transaction kind: '{req.kind}'. Expected CREDIT or PAYMENT."}
+    return res
+
+@router.post("/undo")
+async def undo_transaction(req: UndoRequest):
+    """Undo the most recent transaction in the session."""
+    return KhataService.undo_last_turn(session_id=req.session_id or "default")
