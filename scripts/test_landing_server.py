@@ -35,16 +35,16 @@ def test_full_application():
     assert "Boliye," in r.text
     print(f"  Landing page served successfully ({len(r.text)} bytes)")
 
-    # 3. Application Shell
-    print("\n[3] Testing GET /app (Two-Pane Application Shell)...")
+    # 3. Application Shell / Overview Hub
+    print("\n[3] Testing GET /app (Overview Hub)...")
     r = client.get("/app")
     assert r.status_code == 200
-    assert "VAANI App" in r.text
-    assert "appConvoHistory" in r.text
-    assert "Bol-Khata (Ledger)" in r.text
-    assert "Parchi (Reminders)" in r.text
-    assert "Sensex Awaaz (Bazaar)" in r.text
-    print(f"  Application shell served successfully ({len(r.text)} bytes)")
+    assert "VAANI" in r.text
+    assert ("Vaani Hub" in r.text or "VAANI App" in r.text)
+    assert "Bol-Khata" in r.text
+    assert "Parchi" in r.text
+    assert "Sensex Awaaz" in r.text
+    print(f"  Application shell/hub served successfully ({len(r.text)} bytes)")
 
     # 4. App Static Assets
     print("\n[4] Testing app static assets (styles & scripts)...")

@@ -92,6 +92,10 @@ class VoicePipeline:
         module_results = []
 
         if not dry_run:
+            cls._init_utterance(turn_id, session_id, transcript, language)
+            session = session_manager.get_or_create(session_id)
+            if not any(a["tool"] in ("undo_last", "correct_last_entry") for a in validated_actions):
+                session.clear_last_entries()
             for act in validated_actions:
                 tool = act["tool"]
                 args = act.get("args", {})
@@ -225,6 +229,22 @@ class VoicePipeline:
             "requires_confirmation": requires_confirmation,
             "timings": timings
         }
+
+    @classmethod
+    def _init_utterance(cls, turn_id: str, session_id: str, transcript: str, language: str):
+        """Pre-insert turn_id to satisfy foreign key constraints before child entries are inserted."""
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            with get_db() as conn:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO utterances (id, session_id, transcript, detected_language, status, created_at)
+                    VALUES (?, ?, ?, ?, 'processing', ?);
+                    """,
+                    (turn_id, session_id, transcript, language, now)
+                )
+        except Exception as e:
+            print(f"[Pipeline] _init_utterance warning: {e}")
 
     @classmethod
     def _log_utterance(cls, turn_id: str, session_id: str, transcript: str,

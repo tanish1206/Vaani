@@ -297,6 +297,8 @@ class KhataService:
         reply = render_template("undo", lang=lang)
         return {"undone": True, "reply_text": reply}
 
+    undo_last_turn = undo_last
+
     @staticmethod
     def draft_reminder(customer_name: str, lang: str = "hinglish") -> Dict[str, Any]:
         """Generate a polite WhatsApp reminder message draft."""

@@ -129,22 +129,34 @@ class ParchiService:
         return {"doses": doses, "reply_text": reply}
 
     @staticmethod
-    def mark_dose_done(medicine_name: Optional[str] = None) -> Dict[str, Any]:
-        """Mark the earliest pending reminder as completed."""
+    def mark_dose_done(medicine_name: Optional[str] = None, dose_id: Optional[int] = None) -> Dict[str, Any]:
+        """Mark specific reminder or earliest pending reminder as completed."""
         now = datetime.now(timezone.utc).isoformat()
         with get_db() as conn:
             cur = conn.cursor()
-            cur.execute(
-                """
-                SELECT r.id, m.name, p.patient_label
-                FROM reminders r
-                JOIN medicines m ON m.id = r.medicine_id
-                JOIN prescriptions p ON p.id = m.prescription_id
-                WHERE r.status = 'pending'
-                ORDER BY r.due_at ASC
-                LIMIT 1;
-                """
-            )
+            if dose_id:
+                cur.execute(
+                    """
+                    SELECT r.id, m.name, p.patient_label
+                    FROM reminders r
+                    JOIN medicines m ON m.id = r.medicine_id
+                    JOIN prescriptions p ON p.id = m.prescription_id
+                    WHERE r.id = ?;
+                    """,
+                    (dose_id,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT r.id, m.name, p.patient_label
+                    FROM reminders r
+                    JOIN medicines m ON m.id = r.medicine_id
+                    JOIN prescriptions p ON p.id = m.prescription_id
+                    WHERE r.status = 'pending'
+                    ORDER BY r.due_at ASC
+                    LIMIT 1;
+                    """
+                )
             row = cur.fetchone()
             if not row:
                 return {"reply_text": "Koi pending dawa nahi mili."}
@@ -152,6 +164,9 @@ class ParchiService:
             rem_id = row["id"]
             med_name = row["name"]
             cur.execute("UPDATE reminders SET status = 'done', done_at = ? WHERE id = ?;", (now, rem_id))
+
+        reply = f"{row['patient_label']} ki {med_name} lene ki pushti ho gayi hai."
+        return {"status": "done", "reminder_id": rem_id, "medicine": med_name, "reply_text": reply}
 
         reply = f"{med_name} lene ka hisaab darj ho gaya. Badhiya!"
         return {"marked_done": True, "medicine_name": med_name, "reply_text": reply}

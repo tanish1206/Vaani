@@ -71,6 +71,11 @@ async def health_check():
         "tagline": settings.TAGLINE,
         "version": "2.0.0",
         "demo_mode": settings.is_demo_mode(),
+        "models": {
+            "stt": settings.STT_MODEL,
+            "evon": settings.EVON_MODEL,
+            "tts": settings.TTS_MODEL
+        },
         "service_readiness": settings.get_service_readiness(),
         "database": {
             "path": settings.DB_PATH,

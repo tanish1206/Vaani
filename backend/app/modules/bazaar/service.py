@@ -94,6 +94,15 @@ class BazaarService:
             socket.setdefaulttimeout(prev_timeout)
 
     @classmethod
+    def get_quote(cls, symbol: str) -> Optional[Dict[str, Any]]:
+        """Fetch quote from SQLite market_cache by symbol."""
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM market_cache WHERE symbol = ?;", (symbol,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    @classmethod
     def market_snapshot(cls, scope: str = "overview", symbols: Optional[List[str]] = None,
                         lang: str = "hinglish") -> Dict[str, Any]:
         """Fetch market snapshot and return plain-language audio briefing."""

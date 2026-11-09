@@ -22,8 +22,8 @@ class UserSession:
         self.updated_at = time.time()
 
     def record_turn_entries(self, entry_ids: List[int], actions: List[Dict[str, Any]]):
-        self.last_entry_ids = entry_ids
-        self.last_actions = actions
+        self.last_entry_ids.extend(entry_ids)
+        self.last_actions.extend(actions)
         self.updated_at = time.time()
 
     def clear_last_entries(self):
