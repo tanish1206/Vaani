@@ -114,6 +114,265 @@
       box-shadow: 0 0 0 3px rgba(234, 170, 0, 0.15);
     }
     
+    /* Dedicated Voice Persona Selection */
+    .voice-selection-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .voice-selection-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: linear-gradient(135deg, rgba(221, 227, 232, 0.3) 0%, rgba(234, 170, 0, 0.06) 100%);
+    }
+
+    .model-selector-bar {
+      display: flex;
+      gap: 12px;
+      padding: 16px 24px;
+      background: var(--ice-50);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .model-toggle-btn {
+      padding: 9px 18px;
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      border-radius: var(--radius-pill);
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--aubergine);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all var(--dur-fast);
+    }
+
+    .model-toggle-btn:hover {
+      border-color: var(--marigold);
+    }
+
+    .model-toggle-btn.active {
+      background: var(--aubergine);
+      color: #FFFFFF;
+      border-color: var(--aubergine);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .model-toggle-btn.active .model-badge-count {
+      background: var(--marigold);
+      color: var(--aubergine);
+    }
+
+    .model-badge-count {
+      background: var(--ice-100);
+      color: var(--aubergine-70);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+    }
+
+    .voice-filter-toolbar {
+      display: flex;
+      gap: 14px;
+      padding: 14px 24px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      outline: none;
+      min-width: 180px;
+    }
+
+    .filter-input:focus {
+      border-color: var(--marigold);
+    }
+
+    .filter-select {
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      outline: none;
+      background: #FFFFFF;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      border-color: var(--marigold);
+    }
+
+    .voice-persona-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 18px;
+      padding: 24px;
+    }
+
+    .voice-card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all var(--dur-normal) var(--ease-out);
+      position: relative;
+    }
+
+    .voice-card:hover {
+      border-color: var(--marigold-300);
+      box-shadow: var(--shadow-md);
+    }
+
+    .voice-card.selected {
+      border-color: var(--marigold);
+      box-shadow: 0 4px 18px rgba(234, 170, 0, 0.22);
+      background: linear-gradient(180deg, #FFFFFF 0%, rgba(234, 170, 0, 0.04) 100%);
+    }
+
+    .voice-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .voice-name-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--aubergine);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .voice-badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .voice-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      background: var(--ice-50);
+      color: var(--aubergine-70);
+      border: 1px solid var(--border);
+    }
+
+    .voice-chip.engine {
+      background: rgba(58, 15, 52, 0.06);
+      color: var(--aubergine);
+      font-weight: 700;
+    }
+
+    .voice-chip.lang {
+      background: rgba(234, 170, 0, 0.12);
+      color: var(--aubergine);
+      border-color: rgba(234, 170, 0, 0.3);
+    }
+
+    .voice-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      min-height: 35px;
+    }
+
+    .voice-sample-quote {
+      font-size: 11.5px;
+      color: var(--aubergine-70);
+      background: var(--ice-50);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--marigold);
+      font-style: italic;
+    }
+
+    .voice-card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      gap: 10px;
+    }
+
+    .btn-preview-voice {
+      background: var(--ice-50);
+      border: 1px solid var(--border);
+      color: var(--aubergine);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--dur-fast);
+    }
+
+    .btn-preview-voice:hover {
+      background: var(--marigold-100);
+      border-color: var(--marigold);
+    }
+
+    .btn-preview-voice.playing {
+      background: #B71C1C;
+      color: #FFFFFF;
+      border-color: #B71C1C;
+    }
+
+    .btn-select-voice {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all var(--dur-fast);
+    }
+
+    .btn-select-voice:hover {
+      border-color: var(--aubergine);
+      color: var(--aubergine);
+    }
+
+    .voice-card.selected .btn-select-voice {
+      background: var(--aubergine);
+      color: #FFFFFF;
+      border-color: var(--aubergine);
+    }
+
     /* Diagnostics Cards */
     .diag-readiness-grid {
       display: grid;
@@ -282,9 +541,113 @@
 
       <!-- TAB 1: SHOPKEEPER PREFERENCES -->
       <div class="tab-content-panel active" id="tabShopkeeper">
+
+        <!-- DEDICATED GNANI VOICE SELECTION CARD -->
+        <div class="voice-selection-card">
+          <div class="voice-selection-header">
+            <div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:22px;">🎙️</span>
+                <h2 style="font-family: var(--font-display); font-size: 19px; color: var(--aubergine); margin:0;">
+                  Gnani Sovereign Voice Persona (वाणी आवाज़ चयन)
+                </h2>
+                <span id="activeVoiceBadge" class="status-badge live">Active: Shivani (timbre-v3.0)</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; margin-bottom: 0;">
+                Select from official Gnani Timbre models. Preview live synthesized speech and persist your preference across all VAANI modules.
+              </p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button class="btn-primary-action" id="btnSaveVoiceTop" onclick="saveSelectedVoicePreference()">
+                ✓ Save Voice Preference
+              </button>
+            </div>
+          </div>
+
+          <!-- Model Selector Tabs -->
+          <div class="model-selector-bar">
+            <span style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--aubergine-70);">
+              TTS Engine Model:
+            </span>
+            <button class="model-toggle-btn active" id="btnModelV3" onclick="switchTtsModel('timbre-v3.0')">
+              <span>🌟 Timbre v3.0 (Flagship Pan-India)</span>
+              <span class="model-badge-count">13 Voices</span>
+            </button>
+            <button class="model-toggle-btn" id="btnModelV25" onclick="switchTtsModel('timbre-v2.5')">
+              <span>🇮🇳 Timbre v2.5 (Vernacular Specialised)</span>
+              <span class="model-badge-count">42 Voices</span>
+            </button>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="voice-filter-toolbar">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Language:</span>
+              <select id="filterVoiceLang" class="filter-select" onchange="applyVoiceFilters()">
+                <option value="all">All Languages (सभी भाषाएँ)</option>
+                <option value="hi-IN">Hindi (हिन्दी)</option>
+                <option value="mr-IN">Marathi (मराठी)</option>
+                <option value="en-IN">English (Indian)</option>
+                <option value="ta-IN">Tamil (தமிழ்)</option>
+                <option value="te-IN">Telugu (తెలుగు)</option>
+                <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                <option value="ml-IN">Malayalam (മലയാളം)</option>
+                <option value="bn-IN">Bengali (বাংলা)</option>
+                <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+                <option value="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
+              </select>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Gender:</span>
+              <select id="filterVoiceGender" class="filter-select" onchange="applyVoiceFilters()">
+                <option value="all">All Genders</option>
+                <option value="Female">Female (स्त्री)</option>
+                <option value="Male">Male (पुरुष)</option>
+              </select>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Playback Speed:</span>
+              <select id="voiceSpeedSelect" class="filter-select" onchange="updateVoiceSpeed()">
+                <option value="0.8">0.8x (धीमी / Clear)</option>
+                <option value="0.9">0.9x (धीमी / Deliberate)</option>
+                <option value="1.0" selected>1.0x (सामान्य / Normal)</option>
+                <option value="1.1">1.1x (तेज़ / Swift)</option>
+                <option value="1.2">1.2x (तेज़ / Fast)</option>
+              </select>
+            </div>
+
+            <div style="margin-left:auto;">
+              <input type="text" id="filterVoiceSearch" class="filter-input" placeholder="Search voice or persona..." oninput="applyVoiceFilters()" />
+            </div>
+          </div>
+
+          <!-- Dynamic Voice Grid -->
+          <div id="gnaniVoiceList" class="voice-persona-grid">
+            <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted);">
+              Loading verified Gnani voices...
+            </div>
+          </div>
+
+          <!-- Footer Save Bar -->
+          <div style="padding: 16px 24px; background: var(--ice-50); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--text-muted); flex-wrap: wrap; gap: 12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:700; color:var(--aubergine);">Selected Persona:</span>
+              <span id="selectedVoiceSummary" style="font-weight:600; color:var(--marigold-600); background:var(--marigold-100); padding:3px 10px; border-radius:var(--radius-pill);">
+                Shivani (timbre-v3.0)
+              </span>
+              <span style="color:var(--text-muted);">— Live previews generate real Gnani audio with zero database writes.</span>
+            </div>
+            <button class="btn-primary-action" onclick="saveSelectedVoicePreference()">
+              ✓ Save Voice Preference
+            </button>
+          </div>
+        </div>
+
         <div class="content-box-card">
           <div class="content-box-header">
-            <h2 class="content-box-title">Voice & Interaction Preferences</h2>
+            <h2 class="content-box-title">Interaction & General Preferences</h2>
           </div>
 
           <div class="preference-row">
@@ -553,11 +916,11 @@
         <!-- Reset Demo Fixtures for Evaluators -->
         <div class="action-banner" style="border-color: #FFCDD2; background: #FFEBEE;">
           <div>
-            <div style="font-weight: 700; font-size: 15px; color: #B71C1C;">Evaluator Demo Reset (डेमो रीसेट)</div>
-            <div style="font-size: 13px; color: #5D4037; margin-top: 2px;">Reset ledger balances, prescriptions, and market cache back to clean initial demo fixtures.</div>
+            <div style="font-weight: 700; font-size: 15px; color: #B71C1C;">Fresh Slate Reset (डेटा रीसेट)</div>
+            <div style="font-size: 13px; color: #5D4037; margin-top: 2px;">Purge all transaction records, customer accounts, and prescriptions to return the database to a completely clean, zero-demo-data state.</div>
           </div>
           <button class="btn-secondary-action" style="background: #FFFFFF; border-color: #EF9A9A; color: #B71C1C;" onclick="openResetModal()">
-            🔄 Reset Demo Data
+            🔄 Reset Database to Clean State
           </button>
         </div>
 
@@ -574,13 +937,13 @@
   <!-- CONFIRM RESET MODAL -->
   <div class="modal-overlay" id="resetModal">
     <div class="modal-card">
-      <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--aubergine); margin-bottom: 12px;">Confirm Demo Reset</h3>
+      <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--aubergine); margin-bottom: 12px;">Confirm Database Purge</h3>
       <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
-        This will clear all transactions, customer balances, and prescriptions, and reload the default 5 demo customers (Ramesh, Sunita, Patil, Ganesh, Shinde) and sample medicines.
+        This will clear all transactions, customer accounts, medical prescriptions, and watchlist records to ensure a completely clean, zero-demo-data state.
       </p>
       <div class="form-actions">
         <button class="btn-secondary-action" onclick="closeResetModal()">Cancel</button>
-        <button class="btn-primary-action" style="background:#B71C1C;" onclick="executeResetDemo()">Confirm Reset</button>
+        <button class="btn-primary-action" style="background:#B71C1C;" onclick="executeResetDemo()">Confirm Clean Reset</button>
       </div>
     </div>
   </div>
@@ -604,8 +967,8 @@
         suggestedChips: [
           "आवाज़ बदलें",
           "सिस्टम स्थिति बताओ",
-          "डेमो रीसेट करो",
-          "रमेश का खाता खोलो"
+          "डेटा साफ़ करो",
+          "दुकान का खाता दिखाओ"
         ]
       });
       window.vaaniAgent = agent;

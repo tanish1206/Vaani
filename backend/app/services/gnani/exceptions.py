@@ -25,3 +25,4 @@ class GnaniTimeoutError(GnaniError):
 class GnaniVoiceNotFoundError(GnaniError):
     """Raised when an requested voice ID is not supported by Gnani."""
     pass
+

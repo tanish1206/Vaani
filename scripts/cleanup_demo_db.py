@@ -42,3 +42,4 @@ for t in tables:
         print(f"  {t}: {count}")
 
 conn.close()
+

@@ -29,3 +29,4 @@ for row in cur.execute("SELECT id, patient_label, created_at FROM prescriptions 
 print("\nSettings:")
 for row in cur.execute("SELECT key, value FROM settings").fetchall():
     print(" ", row)
+

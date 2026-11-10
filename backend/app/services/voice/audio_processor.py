@@ -32,3 +32,4 @@ class AudioProcessor:
     def encode_base64_audio(cls, audio_bytes: bytes) -> str:
         """Encode audio bytes into base64 string for immediate JSON transport."""
         return base64.b64encode(audio_bytes).decode("ascii")
+

@@ -136,7 +136,13 @@
 
       if (quotes.length === 0) {
         this.watchlistTbody.innerHTML = `
-          <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Watchlist khali hai.</td></tr>
+          <tr>
+            <td colspan="6" style="text-align:center; padding:44px 24px; color:var(--text-muted);">
+              <div style="font-size:28px; margin-bottom:8px;">📊</div>
+              <div style="font-size:15px; font-weight:700; color:var(--aubergine); margin-bottom:4px;">No watchlist created yet.</div>
+              <div style="font-size:13px; color:var(--text-muted);">Watchlist khali hai. Bolkar ya "+ Stock Jodein" se naya share jodein.</div>
+            </td>
+          </tr>
         `;
         return;
       }

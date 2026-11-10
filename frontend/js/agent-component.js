@@ -1,8 +1,8 @@
 /**
  * VAANI — Reusable Contextual Agent Component
- * Shared across Bol-Khata, Parchi, Sensex Awaaz, and Overview pages.
- * Enforces module scoping, audio recording, text input, confirmation cards,
- * structured result display, and speech playback.
+ * Shared across Bol-Khata, Parchi, Sensex Awaaz, Settings, and Overview pages.
+ * Fully integrated with official Gnani Prisma v3.0 STT & Timbre v3.0 / v2.5 TTS.
+ * Zero browser speechSynthesis or mock fallbacks: Only real Gnani audio playback.
  */
 
 (function () {
@@ -11,16 +11,18 @@
   class VaaniAgent {
     constructor(options = {}) {
       this.containerId = options.containerId;
-      this.moduleId = options.moduleId || options.moduleScope || 'overview'; // 'khata' | 'parchi' | 'bazaar' | 'settings' | 'overview'
+      this.moduleId = options.moduleId || options.moduleScope || 'overview';
       this.moduleTitle = options.moduleTitle || (this.moduleId === 'settings' ? 'Vaani Settings & Diagnostics' : 'Vaani Assistant');
       this.initialGreeting = options.initialGreeting || options.welcomeMessage || 'Namaste! Main Vaani hoon. Boliye, main sun rahi hoon.';
       this.quickPhrases = options.quickPhrases || options.suggestedChips || [];
       this.onActionExecuted = options.onActionExecuted || (() => {});
 
       this.isRecording = false;
+      this.isPlayingSpeech = false;
       this.mediaRecorder = null;
       this.audioChunks = [];
       this.activeStream = null;
+      this.currentAudio = null;
 
       this.container = document.getElementById(this.containerId);
       if (!this.container) {
@@ -28,9 +30,14 @@
         return;
       }
 
+      // Register agent instance globally
+      window.vaaniAgents = window.vaaniAgents || {};
+      window.vaaniAgents[this.containerId] = this;
+
       this.render();
       this.bindEvents();
       this.initWaveform();
+      this.listenVoiceUpdates();
     }
 
     render() {
@@ -83,7 +90,7 @@
             </div>
 
             <div class="agent-dock-inputs">
-              <button id="${this.containerId}-mic-btn" class="agent-mic-btn" title="Tap to speak or hold Space" aria-label="Microphone">
+              <button id="${this.containerId}-mic-btn" class="agent-mic-btn" title="Tap to speak into microphone" aria-label="Microphone">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -114,7 +121,6 @@
     }
 
     bindEvents() {
-      // Send button
       this.sendBtn.addEventListener('click', () => this.handleTextSubmit());
       this.textInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -123,7 +129,6 @@
         }
       });
 
-      // Quick chips
       this.container.querySelectorAll('.agent-chip').forEach(chip => {
         chip.addEventListener('click', () => {
           const phrase = chip.getAttribute('data-phrase');
@@ -131,8 +136,15 @@
         });
       });
 
-      // Mic button
       this.micBtn.addEventListener('click', () => this.toggleMicrophone());
+    }
+
+    listenVoiceUpdates() {
+      window.addEventListener('vaani:voice-updated', (e) => {
+        if (e.detail && e.detail.voice_id) {
+          console.info(`[Agent ${this.moduleId}] Voice updated to ${e.detail.voice_id}`);
+        }
+      });
     }
 
     setStatus(text) {
@@ -146,14 +158,13 @@
       await this.processQuery(text);
     }
 
-    // --- MODULE SCOPE GUARD & PIPELINE CALL ---
     async processQuery(text) {
       this.appendMessage('user', text);
       this.setStatus('Understanding...');
 
       const lower = text.toLowerCase();
 
-      // Cross-Module Scope Guard: Prevent accidental cross-domain actions
+      // Cross-Module Scope Guard
       if (this.moduleId === 'bazaar') {
         if (lower.includes('udhaar') || lower.includes('likh de') || lower.includes('jama') || lower.includes('diye')) {
           this.setStatus('Ready');
@@ -187,22 +198,24 @@
             language_hint: 'auto'
           })
         });
+
+        if (!resp.ok) {
+          throw new Error(`Server returned HTTP ${resp.status}`);
+        }
+
         const data = await resp.json();
 
-        this.setStatus('Speaking...');
         this.appendMessage('vaani', data.reply_text, data.language, null, data);
         this.speakResponse(data);
 
-        // Notify parent workspace to refresh tables / metrics
         if (this.onActionExecuted) {
           this.onActionExecuted(data);
         }
-
-        setTimeout(() => this.setStatus('Ready'), 3000);
       } catch (err) {
         console.error('Agent processQuery error:', err);
         this.setStatus('Error');
         this.appendMessage('vaani', 'Kshama karein, aadesh poora karne mein samasya aayi.');
+        setTimeout(() => this.setStatus('Ready'), 3000);
       }
     }
 
@@ -215,7 +228,6 @@
       } else {
         let structuredHtml = '';
 
-        // If turn has confirmation required (e.g. amount >= 5000)
         if (turnData && turnData.requires_confirmation) {
           structuredHtml += `
             <div class="confirmation-card-box">
@@ -228,7 +240,6 @@
           `;
         }
 
-        // Action navigation buttons
         if (actionLinks && actionLinks.length > 0) {
           structuredHtml += `
             <div class="agent-bubble-actions">
@@ -237,25 +248,25 @@
           `;
         }
 
+        const voiceBadge = turnData && turnData.voice_id ? `🎙️ Gnani ${turnData.voice_id}` : 'VAANI • बोलिए';
+
         bubble.innerHTML = `
           <div class="agent-bubble-speaker-tag">
-            <span>VAANI &bull; बोलिए</span>
-            <button class="btn-replay-icon" title="Replay spoken audio" style="cursor:pointer; background:none; border:none; color:var(--aubergine-70); font-size:11px;">
-              🔊 Replay
-            </button>
+            <span>${voiceBadge}</span>
+            ${turnData && turnData.audio_base64 ? `
+              <button class="btn-replay-icon" title="Replay spoken audio" style="cursor:pointer; background:none; border:none; color:var(--aubergine-70); font-size:11px; font-weight:600;">
+                🔊 Replay
+              </button>
+            ` : ''}
           </div>
           <div class="agent-bubble-text">${text}</div>
           ${structuredHtml}
         `;
 
         const replayBtn = bubble.querySelector('.btn-replay-icon');
-        if (replayBtn) {
+        if (replayBtn && turnData && turnData.audio_base64) {
           replayBtn.addEventListener('click', () => {
-            if (rawPayload && rawPayload.audio_base64) {
-              this.playAudioBase64(rawPayload.audio_base64);
-            } else {
-              this.speakNative(text, lang);
-            }
+            this.playAudioBase64(turnData.audio_base64);
           });
         }
       }
@@ -267,40 +278,45 @@
     speakResponse(data) {
       if (data && data.audio_base64) {
         this.playAudioBase64(data.audio_base64);
-      } else if (data && data.reply_text) {
-        this.speakNative(data.reply_text, data.language);
+      } else {
+        this.setStatus('Ready');
       }
     }
 
     playAudioBase64(b64) {
+      if (!b64) return;
       try {
         if (this.currentAudio) {
           this.currentAudio.pause();
           this.currentAudio = null;
         }
+
         const audio = new Audio("data:audio/wav;base64," + b64);
         this.currentAudio = audio;
+        this.isPlayingSpeech = true;
+        this.setStatus('Speaking...');
+
+        audio.onended = () => {
+          this.isPlayingSpeech = false;
+          this.setStatus('Ready');
+        };
+        audio.onerror = () => {
+          this.isPlayingSpeech = false;
+          this.setStatus('Ready');
+        };
+
         audio.play().catch(e => {
-          console.warn("Audio playback autoplay notice:", e);
+          console.warn("Audio autoplay prevented:", e);
+          this.isPlayingSpeech = false;
+          this.setStatus('Ready');
         });
       } catch (err) {
-        console.warn("Audio element error:", err);
+        console.warn("Audio playback error:", err);
+        this.isPlayingSpeech = false;
+        this.setStatus('Ready');
       }
     }
 
-    speakNative(text, lang) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance(text);
-        utt.rate = 0.95;
-        if (lang === 'hi' || lang === 'hinglish') utt.lang = 'hi-IN';
-        else if (lang === 'mr') utt.lang = 'mr-IN';
-        else utt.lang = 'en-IN';
-        window.speechSynthesis.speak(utt);
-      }
-    }
-
-    // --- AUDIO RECORDING ---
     async toggleMicrophone() {
       if (this.isRecording) {
         await this.stopMicrophone();
@@ -310,6 +326,11 @@
     }
 
     async startMicrophone() {
+      if (this.currentAudio && !this.currentAudio.paused) {
+        this.currentAudio.pause();
+        this.currentAudio = null;
+      }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         this.activeStream = stream;
@@ -326,7 +347,8 @@
       } catch (err) {
         console.warn('Microphone error:', err);
         this.textInput.focus();
-        this.appendMessage('vaani', 'Microphone permission nahi mili. Kripya type karke bole.');
+        this.appendMessage('vaani', 'Microphone permission nahi mili. Kripya type karke batayein.');
+        this.setStatus('Ready');
       }
     }
 
@@ -340,6 +362,7 @@
         const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
         if (this.activeStream) {
           this.activeStream.getTracks().forEach(t => t.stop());
+          this.activeStream = null;
         }
         await this.uploadAudio(blob);
       };
@@ -347,33 +370,46 @@
     }
 
     async uploadAudio(blob) {
+      this.setStatus('Transcribing (Prisma v3.0)...');
+
       try {
         const resp = await fetch('/api/v1/voice/turn', {
           method: 'POST',
           headers: {
             'Content-Type': blob.type || 'audio/webm',
             'X-Session-ID': `agent-${this.moduleId}`,
-            'X-Lang-Hint': 'auto'
+            'X-Lang-Hint': 'indic-auto'
           },
           body: blob
         });
+
+        if (!resp.ok) {
+          throw new Error(`Server returned HTTP ${resp.status}`);
+        }
+
         const data = await resp.json();
 
         if (data.transcript) {
           this.appendMessage('user', data.transcript);
         }
-        this.setStatus('Speaking...');
+
+        if (data.error_code === 'CONFIGURATION_MISSING') {
+          this.appendMessage('vaani', 'GNANI API KEY NOT CONFIGURED. Please set GNANI_API_KEY in .env on the backend.');
+          this.setStatus('Ready');
+          return;
+        }
+
         this.appendMessage('vaani', data.reply_text, data.language, null, data);
         this.speakResponse(data);
 
         if (this.onActionExecuted) {
           this.onActionExecuted(data);
         }
-        setTimeout(() => this.setStatus('Ready'), 3000);
       } catch (err) {
         console.error('Audio upload failed:', err);
         this.setStatus('Error');
-        this.appendMessage('vaani', 'Awaaz samajhne mein dikkat aayi.');
+        this.appendMessage('vaani', 'Awaaz pehchanne mein samasya aayi. Kripya dobara boliye.');
+        setTimeout(() => this.setStatus('Ready'), 3000);
       }
     }
 
@@ -393,14 +429,16 @@
         const spacing = (canvas.width - (bars * barWidth)) / (bars - 1);
         const centerY = canvas.height / 2;
 
+        const isActive = this.isRecording || this.isPlayingSpeech;
+
         for (let i = 0; i < bars; i++) {
           const x = i * (barWidth + spacing);
-          const amp = this.isRecording ? 9 : 2.5;
+          const amp = isActive ? 9 : 2.5;
           const h = Math.max(3, Math.abs(Math.sin(phase + i * 0.3) * amp));
 
-          ctx.fillStyle = this.isRecording ? '#EAAA00' : 'rgba(58, 15, 52, 0.25)';
+          ctx.fillStyle = this.isRecording ? '#EAAA00' : (this.isPlayingSpeech ? '#EAAA00' : 'rgba(58, 15, 52, 0.25)');
           ctx.beginPath();
-          ctx.roundRect(x, centerY - h / 2, barWidth, h, 1.5);
+          ctx.roundRect ? ctx.roundRect(x, centerY - h / 2, barWidth, h, 1.5) : ctx.rect(x, centerY - h / 2, barWidth, h);
           ctx.fill();
         }
       };

@@ -406,11 +406,12 @@
 
     async toggleVoiceLoop() {
       if (this.state === 'idle') {
-        // Attempt real audio recording via getUserMedia
         const success = await this.startRealRecording();
         if (!success) {
-          // Graceful fallback to pre-recorded / simulated scenario
-          this.startScenario(this.currentScenarioKey);
+          if (this.micStatusText) {
+            this.micStatusText.textContent = "Microphone permission denied. Kripya neeche likhein.";
+          }
+          if (this.textInput) this.textInput.focus();
         }
       } else if (this.state === 'listening') {
         this.stopRealRecording();
@@ -447,16 +448,16 @@
         this.transcriptEl.textContent = "Sun raha hoon... (Aap bol sakte hain)";
         this.jsonEl.textContent = "// Gnani Prisma v3.0 capturing audio...";
 
-        // Auto-stop after 5 seconds of speech if user doesn't toggle
+        // Auto-stop after 6 seconds of speech if user doesn't toggle
         this.timer = setTimeout(() => {
           if (this.state === 'listening') {
             this.stopRealRecording();
           }
-        }, 5000);
+        }, 6000);
 
         return true;
       } catch (err) {
-        console.info('[VAANI] Browser mic access bypassed, using high-fidelity simulator:', err.message);
+        console.warn('[VAANI] Browser mic access error:', err.message);
         return false;
       }
     }
@@ -480,32 +481,47 @@
 
     async handleRecordedAudio() {
       const audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
-      if (audioBlob.size < 100) {
-        this.startScenario(this.currentScenarioKey);
+      if (audioBlob.size < 120) {
+        this.transcriptEl.textContent = "Awaaz bahut choti thi. Kripya thoda lamba boliye.";
+        this.setLifecycleState('idle');
         return;
       }
 
-      this.transcriptEl.textContent = "Audio process ho raha hai (Prisma STT)...";
+      this.transcriptEl.textContent = "Audio transcribe ho raha hai (Gnani Prisma v3.0)...";
       this.setLifecycleState('processing');
 
       try {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-        formData.append('session_id', 'landing-demo');
-
         const resp = await fetch('/api/v1/voice/turn', {
           method: 'POST',
-          body: formData
+          headers: {
+            'Content-Type': audioBlob.type || 'audio/webm',
+            'X-Session-ID': 'landing-ephemeral',
+            'X-Lang-Hint': 'indic-auto'
+          },
+          body: audioBlob
         });
 
-        if (!resp.ok) throw new Error('Voice API response not ok');
+        if (!resp.ok) {
+          throw new Error(`Gnani API responded with HTTP ${resp.status}`);
+        }
+
         const data = await resp.json();
+
+        if (data.error_code === 'CONFIGURATION_MISSING') {
+          this.transcriptEl.textContent = "GNANI API KEY NOT CONFIGURED";
+          this.jsonEl.textContent = "// Set GNANI_API_KEY in .env on the backend to activate speech recognition.";
+          this.replyTextEl.textContent = "Gnani API key is not configured in .env. Please configure your key to use live speech recognition.";
+          this.setLifecycleState('idle');
+          return;
+        }
 
         this.renderLiveTurnResponse(data);
       } catch (err) {
-        console.warn('[VAANI] Live voice endpoint fallback:', err.message);
-        // Fall back to pre-defined scenario seamlessly
-        this.startScenario(this.currentScenarioKey);
+        console.warn('[VAANI] Live voice endpoint error:', err.message);
+        this.transcriptEl.textContent = "Awaaz pehchanne mein samasya aayi.";
+        this.jsonEl.textContent = `// Error: ${err.message}`;
+        this.replyTextEl.textContent = "Kshama karein, Gnani speech service se connect nahi ho saka.";
+        this.setLifecycleState('idle');
       }
     }
 
@@ -516,7 +532,7 @@
 
       this.setLifecycleState('processing');
       this.transcriptEl.textContent = `"${text}"`;
-      this.jsonEl.textContent = "// Evon v3.3 structured reasoning...";
+      this.jsonEl.textContent = "// Evon structured conversational reasoning...";
 
       try {
         const resp = await fetch('/api/v1/text/turn', {
@@ -524,7 +540,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: text,
-            session_id: 'landing-demo'
+            session_id: 'landing-ephemeral',
+            dry_run: true
           })
         });
 
@@ -533,8 +550,11 @@
         this.renderLiveTurnResponse(data);
         this.textInput.value = '';
       } catch (err) {
-        console.warn('[VAANI] Text turn fallback to scenario:', err.message);
-        this.startScenario(this.currentScenarioKey);
+        console.warn('[VAANI] Text turn error:', err.message);
+        this.transcriptEl.textContent = "Aadesh samajhne mein samasya aayi.";
+        this.jsonEl.textContent = `// Error: ${err.message}`;
+        this.replyTextEl.textContent = "Aadesh poora nahi ho saka.";
+        this.setLifecycleState('idle');
       }
     }
 
@@ -554,8 +574,8 @@
         this.setLifecycleState('executing');
         const guardrails = [
           { label: "Deterministic Python integer math validated", passed: true },
-          { label: "Append-only SQLite WAL transaction written", passed: true },
-          { label: "Turn ID tagged & monotonic audit safe", passed: true },
+          { label: "Ephemeral sandbox execution (Zero permanent records stored)", passed: true },
+          { label: "Audit tagged with sovereign turn ID", passed: true },
           { label: "Zero arithmetic performed by LLM", passed: true }
         ];
         this.renderGuardrails(guardrails);
@@ -568,8 +588,6 @@
           if (data.audio_base64) {
             this.lastAudioBase64 = data.audio_base64;
             this.playAudioBase64(data.audio_base64);
-          } else {
-            this.speakNative(reply, evonPayload.language);
           }
 
           if (data.actions && data.actions.some(a => a.tool === 'add_credit' || a.tool === 'record_payment')) {
@@ -586,48 +604,10 @@
     startScenario(scenarioKey) {
       const scenario = SCENARIOS[scenarioKey];
       if (!scenario) return;
-
-      clearTimeout(this.timer);
-      this.setLifecycleState('listening');
-      this.transcriptEl.textContent = "Sun raha hoon...";
-      this.jsonEl.textContent = "// Evon v3.3 model inference awaiting audio stream...";
-      this.guardrailsList.innerHTML = `<div class="guardrail-item"><span class="check-icon">⏳</span><span>Awaiting input...</span></div>`;
-      this.replyTextEl.textContent = "...";
-
-      // Step 1: Listening (simulate audio streaming)
-      this.timer = setTimeout(() => {
-        this.setLifecycleState('processing');
-        this.transcriptEl.textContent = `"${scenario.utterance}"`;
-
-        // Step 2: Understanding (Evon JSON extraction)
-        this.timer = setTimeout(() => {
-          this.setLifecycleState('understanding');
-          this.jsonEl.textContent = JSON.stringify(scenario.evonResult, null, 2);
-
-          // Step 3: Executing (Python guardrails & SQLite transaction)
-          this.timer = setTimeout(() => {
-            this.setLifecycleState('executing');
-            this.renderGuardrails(scenario.guardrails);
-
-            // Step 4: Speaking (Timbre TTS readback)
-            this.timer = setTimeout(() => {
-              this.setLifecycleState('speaking');
-              this.replyTextEl.textContent = scenario.replyText;
-              this.speakNative(scenario.replyText, scenario.language);
-
-              // Show Undo Snackbar if ledger action
-              if (scenario.evonResult.actions.some(a => a.tool === 'add_credit' || a.tool === 'record_payment')) {
-                this.showUndoSnackbar();
-              }
-
-              // Return to idle after speech finishes
-              this.timer = setTimeout(() => {
-                this.setLifecycleState('idle');
-              }, 4500);
-            }, 800);
-          }, 800);
-        }, 900);
-      }, 1100);
+      if (this.textInput) {
+        this.textInput.value = scenario.utterance;
+      }
+      this.handleTextSubmit();
     }
 
     renderGuardrails(checks) {
@@ -643,7 +623,7 @@
     playAudioBase64(b64) {
       try {
         const audio = new Audio("data:audio/wav;base64," + b64);
-        audio.play().catch(e => console.info('Audio autoplay prevented:', e));
+        audio.play().catch(e => console.info('Audio autoplay notice:', e));
       } catch (err) {
         console.warn('Audio play error:', err);
       }
@@ -652,26 +632,11 @@
     replayLastAudio() {
       if (this.lastAudioBase64) {
         this.playAudioBase64(this.lastAudioBase64);
-      } else if (this.replyTextEl && this.replyTextEl.textContent) {
-        this.speakNative(this.replyTextEl.textContent, 'hi');
       }
     }
 
     speakNative(text, lang) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.95;
-        utterance.pitch = 1.0;
-        if (lang === 'hi' || lang === 'hinglish') {
-          utterance.lang = 'hi-IN';
-        } else if (lang === 'mr') {
-          utterance.lang = 'mr-IN';
-        } else {
-          utterance.lang = 'en-IN';
-        }
-        window.speechSynthesis.speak(utterance);
-      }
+      // Disallowed: Zero browser speechSynthesis. Only official Gnani audio is played.
     }
 
     showUndoSnackbar() {

@@ -53,11 +53,9 @@
         containerId: 'khata-agent-container',
         moduleId: 'khata',
         moduleTitle: 'Bol-Khata Ledger Agent',
-        initialGreeting: 'Namaste! Main Bol-Khata assistant hoon. Udhaar likhna ho ya jama karna ho — bas boliye, jaise: "Ramesh ko 500 udhaar likh do".',
+        initialGreeting: 'Namaste! Main Bol-Khata assistant hoon. Dukaan ka hisaab bolkar darj karein ya "+ Udhaar Likhna" se shuru karein.',
         quickPhrases: [
-          'Ramesh ko 500 rupaye ka udhaar likh do',
-          'Sunita ne 200 rupaye diye',
-          'Ramesh ka kitna baaki hai?',
+          'Naya khata jodo',
           'Aaj ka hisaab batao',
           'Sabse zyada udhaar kiska hai?',
           'Galat ho gaya, hata do'
@@ -156,8 +154,10 @@
       if (customersList.length === 0) {
         this.tbody.innerHTML = `
           <tr>
-            <td colspan="5" style="text-align:center; padding:32px; color:var(--text-muted);">
-              Koi grahak nahi mila. Upar button ya bolkar naya khata jodein.
+            <td colspan="5" style="text-align:center; padding:48px 24px; color:var(--text-muted);">
+              <div style="font-size:32px; margin-bottom:12px;">📖</div>
+              <div style="font-size:16px; font-weight:700; color:var(--aubergine); margin-bottom:6px;">No customers added yet.</div>
+              <div style="font-size:13px; color:var(--text-muted);">Koi grahak nahi mila. Boliye ya "+ Udhaar Likhna" se naya khata shuru karein.</div>
             </td>
           </tr>
         `;

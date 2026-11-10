@@ -17,7 +17,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Hindi / Hinglish",
         "gender": "Female",
         "characteristics": "Warm, natural conversational tone (Default)",
-        "sample_text": "Namaste, main Vaani hoon. Aap bataiye, main aapki kya madad kar sakti hoon?"
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्ते, मैं वाणी हूँ. आपकी दुकान का डिजिटल साथी."
     },
     {
         "id": "Deepak",
@@ -26,7 +27,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Hindi / Hinglish",
         "gender": "Male",
         "characteristics": "Clear, professional and balanced tone",
-        "sample_text": "Namaste! Main Deepak hoon. Aaj aapka khata aur hisaab dekhne mein madad karunga."
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्ते! मैं दीपक हूँ. आज आपका खाता और हिसाब देखने में मदद करूँगा."
     },
     {
         "id": "Madhuri",
@@ -35,7 +37,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Marathi / Hindi",
         "gender": "Female",
         "characteristics": "Expressive Marathi & Devanagari vernacular",
-        "sample_text": "Namaskar! Me Vaani ahe. Bola, me tumhala kashi madat karu shakte?"
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्कार! मी वाणी आहे. बोला, मी तुम्हाला कशी मदत करू शकते?"
     },
     {
         "id": "Radhika",
@@ -44,7 +47,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "English (India) / Hinglish",
         "gender": "Female",
         "characteristics": "Articulate, crisp and modern bilingual tone",
-        "sample_text": "Hello, I am Vaani. How can I assist you with your business ledger today?"
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "Hello! I am Vaani. How can I assist you with your business ledger today?"
     },
     {
         "id": "Gaurav",
@@ -53,7 +57,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Hindi / Hinglish",
         "gender": "Male",
         "characteristics": "Lively Kirana merchant and energetic tone",
-        "sample_text": "Ram Ram! Main Gaurav. Boliye kis grahak ka udhaar ya jama likhna hai?"
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "राम राम! मैं गौरव. बोलिए किस ग्राहक का उधार या जमा लिखना है?"
     },
     {
         "id": "Nalini",
@@ -62,7 +67,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Hindi",
         "gender": "Female",
         "characteristics": "Formal, courteous and gentle tone",
-        "sample_text": "Namaskar, aapki har zaroori dawa aur parchi ka dhyan main rakhungi."
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्कार, आपकी हर ज़रूरी दवा और पर्ची का ध्यान मैं रखूँगी."
     },
     {
         "id": "Vikrant",
@@ -71,7 +77,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Hindi",
         "gender": "Male",
         "characteristics": "Calm, authoritative and confident voice",
-        "sample_text": "Namaste, Sensex Awaaz aur bazaar ke hisaab mein aapka swagat hai."
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्ते, सेंसेक्स आवाज़ और बाज़ार के हिसाब में आपका स्वागत है."
     },
     {
         "id": "Aarohi",
@@ -80,7 +87,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Hindi",
         "gender": "Female",
         "characteristics": "Soft, friendly and pleasant tone",
-        "sample_text": "Namaste ji, main Vaani. Aapka hisaab hamesha surakshit rahega."
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्ते जी, मैं वाणी. आपका हिसाब हमेशा सुरक्षित रहेगा."
     },
     {
         "id": "Omkar",
@@ -89,7 +97,8 @@ GNANI_VOICE_CATALOGUE: List[Dict[str, Any]] = [
         "language_name": "Marathi / Hindi",
         "gender": "Male",
         "characteristics": "Resonant Marathi vernacular voice",
-        "sample_text": "Namaskar, me Omkar. Tumcha khata aani hishob surakshit thevnyat me madat karen."
+        "engine": "Gnani Timbre v2.5",
+        "sample_text": "नमस्कार, मी ओंकार. तुमचा खाता आणि हिशोब सुरक्षित ठेवण्यात मदत करेन."
     }
 ]
 
@@ -113,28 +122,10 @@ class GnaniVoiceService:
     """Service to discover, list, and validate supported Gnani voices."""
 
     @classmethod
-    async def get_available_voices(cls) -> List[Dict[str, Any]]:
+    def get_available_voices(cls) -> List[Dict[str, Any]]:
         """
-        Retrieves supported voice options.
-        If a custom Gnani voice list endpoint is configured and reachable, queries it;
-        otherwise returns the verified official catalogue.
+        Retrieves supported voice options from the official verified catalogue.
         """
-        custom_endpoint = GnaniConfig.get_voice_list_endpoint()
-        if custom_endpoint and GnaniConfig.is_configured():
-            try:
-                headers = GnaniConfig.get_auth_headers()
-                async with httpx.AsyncClient(timeout=4.0) as client:
-                    resp = await client.get(custom_endpoint, headers=headers)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        if isinstance(data, list) and len(data) > 0:
-                            return data
-                        elif isinstance(data, dict) and "voices" in data:
-                            return data["voices"]
-            except Exception as e:
-                # Log and proceed with officially documented catalogue
-                pass
-
         return GNANI_VOICE_CATALOGUE
 
     @classmethod

@@ -33,14 +33,12 @@
         containerId: 'parchi-agent-container',
         moduleId: 'parchi',
         moduleTitle: 'Parchi Medicine Agent',
-        initialGreeting: 'Namaste! Main Parchi assistant hoon. Dawa ka reminder lagana ho ya poochhna ho — boliye, jaise: "Maa ko BP ki goli subah-shaam 5 din".',
+        initialGreeting: 'Namaste! Main Parchi assistant hoon. Dawa ka reminder lagana ho ya poochhna ho — bas boliye, jaise: "Dawa ka reminder bana do".',
         quickPhrases: [
-          'Subah ki dawa ka reminder bana do',
+          'Dawa ka reminder bana do',
           'Meri next medicine kab hai?',
-          'Combiflam lunch ke baad lena hai',
           'De di',
-          '10 minute baad yaad dilana',
-          'Maa ko BP ki goli subah shaam 5 din'
+          '10 minute baad yaad dilana'
         ],
         onActionExecuted: () => {
           this.loadDosesData();
@@ -99,8 +97,10 @@
 
       if (doses.length === 0) {
         this.timelineList.innerHTML = `
-          <div style="padding: 32px; text-align: center; color: var(--text-muted); background: var(--ice-50); border-radius: var(--radius-sm); border: 1px dashed var(--border);">
-            Aaj ke liye koi pending dawa nahi hai. Bolkar ya button se nayi dawa jodein.
+          <div style="padding: 44px 24px; text-align: center; color: var(--text-muted); background: var(--ice-50); border-radius: var(--radius-sm); border: 1.5px dashed var(--border);">
+            <div style="font-size:30px; margin-bottom:10px;">💊</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--aubergine); margin-bottom: 4px;">No prescriptions added yet.</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Koi parchi ya dawa darj nahi hai. Bolkar ya '+ Nayi Parchi' se shuru karein.</div>
           </div>
         `;
         return;
