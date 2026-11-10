@@ -9,6 +9,9 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
 
+import os
+import tempfile
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 def mask_credential(val: Optional[str]) -> str:
@@ -39,8 +42,8 @@ class Settings(BaseSettings):
             return v.lower() in ("true", "1", "t", "yes", "y", "demo")
         return bool(v)
     
-    # Database Path
-    DB_PATH: str = str(BASE_DIR / "data" / "vaani.db")
+    # Database Path (On Vercel / serverless, use writable temp directory)
+    DB_PATH: str = str(Path(tempfile.gettempdir()) / "vaani.db") if os.environ.get("VERCEL") else str(BASE_DIR / "data" / "vaani.db")
     
     # Gnani Services (External Sovereign Indian AI)
     GNANI_API_KEY: str = ""

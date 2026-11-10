@@ -86,8 +86,12 @@ async def health_check():
         "latency_budget_target_seconds": 4.0
     }
 
+from app.config import settings, BASE_DIR
+
 # Path to frontend
-FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
+FRONTEND_DIR = BASE_DIR / "frontend"
+if not FRONTEND_DIR.exists():
+    FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 APP_PAGES_DIR = FRONTEND_DIR / "app"
 
 def serve_html_file(file_path: Path):

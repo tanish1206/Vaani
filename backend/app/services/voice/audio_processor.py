@@ -11,7 +11,12 @@ from typing import Tuple
 import io
 import wave
 import base64
-import av
+
+try:
+    import av
+    HAS_AV = True
+except ImportError:
+    HAS_AV = False
 
 MAX_AUDIO_BYTES = 10 * 1024 * 1024  # 10 MB cap (matches Gnani limits)
 TARGET_SAMPLE_RATE = 16000
@@ -58,44 +63,45 @@ class AudioProcessor:
             except Exception:
                 pass  # Fall through to transcode
 
-        # Use PyAV (ffmpeg) in-memory decoding and resampling
-        try:
-            input_buf = io.BytesIO(audio_bytes)
-            output_buf = io.BytesIO()
+        # Use PyAV (ffmpeg) in-memory decoding and resampling if available
+        if HAS_AV:
+            try:
+                input_buf = io.BytesIO(audio_bytes)
+                output_buf = io.BytesIO()
 
-            with av.open(input_buf) as container:
-                audio_streams = [s for s in container.streams if s.type == "audio"]
-                if not audio_streams:
-                    # If no audio stream found, fallback to original if format is allowed by Gnani
-                    if any(filename.endswith(ext) for ext in (".wav", ".mp3", ".ogg", ".flac", ".aac", ".m4a")):
-                        return audio_bytes, filename, "audio/wav" if filename.endswith(".wav") else "audio/ogg"
-                    return audio_bytes, "turn.wav", "audio/wav"
+                with av.open(input_buf) as container:
+                    audio_streams = [s for s in container.streams if s.type == "audio"]
+                    if not audio_streams:
+                        # If no audio stream found, fallback to original if format is allowed by Gnani
+                        if any(filename.endswith(ext) for ext in (".wav", ".mp3", ".ogg", ".flac", ".aac", ".m4a")):
+                            return audio_bytes, filename, "audio/wav" if filename.endswith(".wav") else "audio/ogg"
+                        return audio_bytes, "turn.wav", "audio/wav"
 
-                stream = audio_streams[0]
-                resampler = av.AudioResampler(
-                    format="s16",
-                    layout="mono",
-                    rate=TARGET_SAMPLE_RATE
-                )
+                    stream = audio_streams[0]
+                    resampler = av.AudioResampler(
+                        format="s16",
+                        layout="mono",
+                        rate=TARGET_SAMPLE_RATE
+                    )
 
-                with wave.open(output_buf, "wb") as wav_out:
-                    wav_out.setnchannels(1)
-                    wav_out.setsampwidth(2)
-                    wav_out.setframerate(TARGET_SAMPLE_RATE)
+                    with wave.open(output_buf, "wb") as wav_out:
+                        wav_out.setnchannels(1)
+                        wav_out.setsampwidth(2)
+                        wav_out.setframerate(TARGET_SAMPLE_RATE)
 
-                    for frame in container.decode(stream):
-                        for rf in resampler.resample(frame):
+                        for frame in container.decode(stream):
+                            for rf in resampler.resample(frame):
+                                wav_out.writeframes(rf.to_ndarray().tobytes())
+
+                        # Flush resampler buffer
+                        for rf in resampler.resample(None):
                             wav_out.writeframes(rf.to_ndarray().tobytes())
 
-                    # Flush resampler buffer
-                    for rf in resampler.resample(None):
-                        wav_out.writeframes(rf.to_ndarray().tobytes())
-
-            wav_bytes = output_buf.getvalue()
-            if len(wav_bytes) > 44:  # Valid WAV header is 44 bytes
-                return wav_bytes, "turn.wav", "audio/wav"
-        except Exception as e:
-            print(f"[AudioProcessor] Transcoding failed: {e}. Attempting fallback.")
+                wav_bytes = output_buf.getvalue()
+                if len(wav_bytes) > 44:  # Valid WAV header is 44 bytes
+                    return wav_bytes, "turn.wav", "audio/wav"
+            except Exception as e:
+                print(f"[AudioProcessor] Transcoding failed: {e}. Attempting fallback.")
 
         # Fallback: if already a recognized gnani format, pass through with proper MIME
         ext = filename.split(".")[-1].lower() if "." in filename else "wav"
