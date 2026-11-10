@@ -2,11 +2,13 @@
 Gnani Prisma v3.0 Automatic Speech Recognition (ASR) Service.
 Communicates directly with the official Gnani STT endpoint: POST https://api.vachana.ai/stt/v3.
 Zero mock data: Only returns genuine transcripts or explicit error states.
+Standardizes incoming audio streams to 16 kHz Mono WAV for guaranteed Gnani compatibility.
 """
 
 from typing import Dict, Any, Optional
 import httpx
 from app.services.gnani.config import GnaniConfig
+from app.services.voice.audio_processor import AudioProcessor
 from app.services.gnani.exceptions import (
     GnaniConfigurationMissingError,
     GnaniAuthError,
@@ -23,6 +25,9 @@ class GnaniASRService:
                           language_code: Optional[str] = None) -> Dict[str, Any]:
         """
         Transcribe user recorded audio via Gnani Prisma v3.0.
+        Automatically normalizes incoming browser containers (WebM, Ogg, MP4, AAC)
+        into 16 kHz Mono RIFF WAV before uploading to https://api.vachana.ai/stt/v3.
+
         Returns:
             {
                 "success": bool,
@@ -53,6 +58,12 @@ class GnaniASRService:
                 "error_code": "CONFIGURATION_MISSING"
             }
 
+        # Normalize incoming audio container to Gnani-supported 16 kHz Mono RIFF WAV
+        clean_bytes, clean_filename, clean_content_type = AudioProcessor.ensure_gnani_compatible_wav(
+            audio_bytes=audio_bytes,
+            filename=filename
+        )
+
         headers = GnaniConfig.get_auth_headers()
         endpoint = GnaniConfig.get_asr_endpoint()
         model = GnaniConfig.get_stt_model()
@@ -67,16 +78,7 @@ class GnaniASRService:
         else:
             data["language_code"] = "indic-auto"
 
-        # Determine MIME type
-        content_type = "audio/webm"
-        if filename.endswith(".wav"):
-            content_type = "audio/wav"
-        elif filename.endswith(".ogg"):
-            content_type = "audio/ogg"
-        elif filename.endswith(".mp3"):
-            content_type = "audio/mpeg"
-
-        files = {"audio_file": (filename, audio_bytes, content_type)}
+        files = {"audio_file": (clean_filename, clean_bytes, clean_content_type)}
 
         try:
             async with httpx.AsyncClient(timeout=14.0) as client:
@@ -103,6 +105,23 @@ class GnaniASRService:
                         "latency": latency,
                         "model": payload.get("model", model),
                         "provider": "gnani-prisma-v3.0"
+                    }
+                elif resp.status_code == 400:
+                    try:
+                        err_json = resp.json()
+                        err_detail = err_json.get("error", {})
+                        msg = err_detail.get("message") if isinstance(err_detail, dict) else str(err_json)
+                        err_type = err_detail.get("type", "BAD_REQUEST") if isinstance(err_detail, dict) else "BAD_REQUEST"
+                    except Exception:
+                        msg = resp.text[:140]
+                        err_type = "BAD_REQUEST"
+                    return {
+                        "success": False,
+                        "transcript": "",
+                        "language_code": "unknown",
+                        "confidence": 0.0,
+                        "error": f"Gnani ASR rejected request: {msg}",
+                        "error_code": err_type
                     }
                 elif resp.status_code == 401:
                     return {

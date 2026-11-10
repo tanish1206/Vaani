@@ -435,7 +435,14 @@
         source.connect(this.analyser);
 
         this.recordedChunks = [];
-        this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        const preferredTypes = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/ogg;codecs=opus',
+          'audio/mp4'
+        ];
+        const supportedType = preferredTypes.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t));
+        this.mediaRecorder = supportedType ? new MediaRecorder(stream, { mimeType: supportedType }) : new MediaRecorder(stream);
         this.mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) this.recordedChunks.push(e.data);
         };
@@ -480,7 +487,8 @@
     }
 
     async handleRecordedAudio() {
-      const audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+      const mimeType = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'audio/webm';
+      const audioBlob = new Blob(this.recordedChunks, { type: mimeType });
       if (audioBlob.size < 120) {
         this.transcriptEl.textContent = "Awaaz bahut choti thi. Kripya thoda lamba boliye.";
         this.setLifecycleState('idle');

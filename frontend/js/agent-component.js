@@ -338,7 +338,14 @@
         this.micBtn.classList.add('listening');
         this.setStatus('Listening...');
 
-        this.mediaRecorder = new MediaRecorder(stream);
+        const preferredTypes = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/ogg;codecs=opus',
+          'audio/mp4'
+        ];
+        const supportedType = preferredTypes.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t));
+        this.mediaRecorder = supportedType ? new MediaRecorder(stream, { mimeType: supportedType }) : new MediaRecorder(stream);
         this.audioChunks = [];
         this.mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) this.audioChunks.push(e.data);
@@ -359,7 +366,8 @@
       this.setStatus('Processing audio...');
 
       this.mediaRecorder.onstop = async () => {
-        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        const mimeType = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'audio/webm';
+        const blob = new Blob(this.audioChunks, { type: mimeType });
         if (this.activeStream) {
           this.activeStream.getTracks().forEach(t => t.stop());
           this.activeStream = null;

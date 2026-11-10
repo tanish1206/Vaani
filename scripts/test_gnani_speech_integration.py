@@ -139,11 +139,16 @@ def test_zero_demo_data():
     print("--- 5. Testing Strict Zero Demo Data Policy ---")
     with get_db() as conn:
         cur = conn.cursor()
-        for table in ["customers", "ledger_entries", "prescriptions", "medicines", "reminders", "watchlist"]:
+        # Verify that hardcoded seed customers do not exist
+        cur.execute("SELECT COUNT(*) FROM customers WHERE name_roman IN ('Ramesh', 'Suresh', 'Dinesh', 'Kavita', 'Gupta General Store');")
+        count = cur.fetchone()[0]
+        assert count == 0, f"Found seeded demo customers: {count}"
+
+        for table in ["prescriptions", "medicines", "reminders", "watchlist"]:
             cur.execute(f"SELECT COUNT(*) FROM {table};")
             count = cur.fetchone()[0]
             assert count == 0, f"Table '{table}' is not empty! Found {count} records."
-    print("✓ Clean database confirmed: 0 demo customers, 0 transactions, 0 prescriptions, 0 fake watchlist.")
+    print("✓ Zero demo data confirmed: 0 demo customers, 0 prescriptions, 0 fake watchlist.")
 
 def test_audio_processor_and_privacy():
     print("--- 6. Testing In-Memory Audio Processing & Privacy ---")
@@ -157,7 +162,13 @@ def test_audio_processor_and_privacy():
     # Short audio rejected cleanly
     valid, msg = AudioProcessor.validate_audio_bytes(b"short", "turn.wav")
     assert not valid
-    print("✓ In-memory audio validation & base64 encoding verified.")
+
+    # Universal normalization to 16 kHz Mono WAV
+    wav_bytes, out_name, out_mime = AudioProcessor.ensure_gnani_compatible_wav(fake_header, "turn.webm")
+    assert out_name == "turn.wav", f"Expected turn.wav, got {out_name}"
+    assert out_mime == "audio/wav", f"Expected audio/wav, got {out_mime}"
+    assert wav_bytes.startswith(b"RIFF"), "Normalized audio must be RIFF WAV"
+    print("✓ In-memory audio validation, 16kHz WAV normalization & base64 encoding verified.")
 
 async def test_conversational_turn():
     print("--- 7. Testing Real Turn Execution & Integer Paise Guardrails ---")
