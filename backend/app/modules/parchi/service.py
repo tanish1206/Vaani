@@ -51,6 +51,7 @@ class ParchiService:
                 dose_text = med.get("dose_text")
                 with_food = med.get("with_food")
                 times = med.get("times_of_day", ["morning", "evening"])
+                time_str_override = med.get("time_str")
 
                 cur.execute(
                     """
@@ -65,7 +66,7 @@ class ParchiService:
                 for day_offset in range(days):
                     rem_date = date.today() + timedelta(days=day_offset)
                     for slot in times:
-                        time_str = TIME_SLOT_HOURS.get(slot, "08:00")
+                        time_str = time_str_override or TIME_SLOT_HOURS.get(slot, "08:00")
                         due_iso = f"{rem_date.isoformat()}T{time_str}:00Z"
                         cur.execute(
                             """
@@ -77,12 +78,31 @@ class ParchiService:
                         total_reminders += 1
 
         med_summary = ", ".join(med_names)
-        times_summary = "subah aur shaam"
-        if len(medicines) > 0 and len(medicines[0].get("times_of_day", [])) > 2:
-            times_summary = "din mein teen baar"
+        first_med = medicines[0] if medicines else {}
+        custom_time = first_med.get("time_str")
 
-        food_note = ", khaane ke baad" if medicines and medicines[0].get("with_food") == "after" else ""
-        schedule_text = f"{times_summary}{food_note}, {days} din"
+        if custom_time:
+            time_suffix = "बजे" if lang == "hi" else "baje"
+            day_suffix = "दिन" if lang == "hi" else "din"
+            schedule_text = f"{custom_time} {time_suffix}, {days} {day_suffix}"
+        else:
+            if len(first_med.get("times_of_day", [])) > 2:
+                times_summary = "दिन में तीन बार" if lang == "hi" else "din mein teen baar"
+            elif len(first_med.get("times_of_day", [])) == 1:
+                slot = first_med.get("times_of_day", ["morning"])[0]
+                slot_hi = {"morning": "सुबह", "afternoon": "दोपहर", "evening": "शाम", "night": "रात"}
+                times_summary = slot_hi.get(slot, slot) if lang == "hi" else slot
+            else:
+                times_summary = "सुबह और शाम" if lang == "hi" else "subah aur shaam"
+
+            food_note = ""
+            if first_med.get("with_food") == "after":
+                food_note = ", खाने के बाद" if lang == "hi" else ", khaane ke baad"
+            elif first_med.get("with_food") == "before":
+                food_note = ", खाने से पहले" if lang == "hi" else ", khaane se pehle"
+
+            day_suffix = "दिन" if lang == "hi" else "din"
+            schedule_text = f"{times_summary}{food_note}, {days} {day_suffix}"
 
         reply = render_template(
             "save_prescription",
@@ -168,9 +188,6 @@ class ParchiService:
         reply = f"{row['patient_label']} ki {med_name} lene ki pushti ho gayi hai."
         return {"status": "done", "reminder_id": rem_id, "medicine": med_name, "reply_text": reply}
 
-        reply = f"{med_name} lene ka hisaab darj ho gaya. Badhiya!"
-        return {"marked_done": True, "medicine_name": med_name, "reply_text": reply}
-
     @staticmethod
     def snooze_dose(minutes: int = 10) -> Dict[str, Any]:
         """Snooze pending reminder for specified minutes."""
@@ -189,4 +206,3 @@ class ParchiService:
 
         reply = f"{minutes} minute ke liye reminder aage badha diya gaya hai."
         return {"snoozed": True, "minutes": minutes, "reply_text": reply}
-

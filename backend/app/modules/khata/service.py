@@ -1,6 +1,7 @@
 """
 Bol-Khata (Business Ledger) Service Layer.
 Handles Customer Management, Transactions, Balances, Daily Summaries, and Undo.
+STRICT PRIVACY & ACCURACY: Pulls customer name directly from verified database record.
 """
 
 from typing import Dict, Any, List, Optional, Tuple
@@ -11,6 +12,7 @@ from app.db.session import get_db
 from app.db.seed import normalise_name_key
 from app.core.i18n import to_paise, format_rupees, render_template
 from app.core.session import session_manager
+from app.gnani.evon import transliterate_devanagari
 
 try:
     from rapidfuzz import fuzz
@@ -20,15 +22,21 @@ except ImportError:
 
 def find_or_create_customer(conn: sqlite3.Connection, name: str, name_roman: Optional[str] = None) -> Tuple[int, str, bool]:
     """
-    Find existing customer by exact or fuzzy matching, or create a new one.
+    Find existing customer by exact or fuzzy matching, or create a new customer.
     Returns: (customer_id, display_name, is_new_customer)
     """
     cur = conn.cursor()
-    roman = name_roman or name
+    roman = name_roman or transliterate_devanagari(name) or name
     key = normalise_name_key(roman)
 
     # 1. Exact match on normalised key
     cur.execute("SELECT id, name, name_roman FROM customers WHERE name_key = ?;", (key,))
+    row = cur.fetchone()
+    if row:
+        return row["id"], row["name"], False
+
+    # 1b. Exact match on raw name or name_roman (case-insensitive)
+    cur.execute("SELECT id, name, name_roman FROM customers WHERE lower(name) = ? OR lower(name_roman) = ?;", (name.lower(), roman.lower()))
     row = cur.fetchone()
     if row:
         return row["id"], row["name"], False
@@ -51,7 +59,7 @@ def find_or_create_customer(conn: sqlite3.Connection, name: str, name_roman: Opt
     if best_match and best_score >= 85:
         return best_match["id"], best_match["name"], False
 
-    # 3. Create new customer
+    # 3. Create new customer with the exact spoken name
     now = datetime.now(timezone.utc).isoformat()
     cur.execute(
         """
@@ -65,16 +73,16 @@ def find_or_create_customer(conn: sqlite3.Connection, name: str, name_roman: Opt
 
 class KhataService:
     @staticmethod
-    def add_credit(customer_name: str, amount: float, note: Optional[str] = None,
-                   utterance_id: Optional[str] = None, session_id: str = "default",
-                   lang: str = "hinglish") -> Dict[str, Any]:
+    def add_credit(customer_name: str, amount: float, customer_name_roman: Optional[str] = None,
+                   note: Optional[str] = None, utterance_id: Optional[str] = None,
+                   session_id: str = "default", lang: str = "hinglish") -> Dict[str, Any]:
         """Record credit given to a customer."""
         amount_paise = to_paise(amount)
         now = datetime.now(timezone.utc).isoformat()
 
         with get_db() as conn:
             cur = conn.cursor()
-            cust_id, display_name, is_new = find_or_create_customer(conn, customer_name)
+            cust_id, display_name, is_new = find_or_create_customer(conn, customer_name, name_roman=customer_name_roman)
             
             cur.execute(
                 """
@@ -94,16 +102,11 @@ class KhataService:
         session.set_last_customer(cust_id, display_name)
         session.record_turn_entries([entry_id], [{"tool": "add_credit", "entry_id": entry_id}])
 
-        reply = render_template(
-            "add_credit",
-            lang=lang,
-            customer_name=display_name,
-            amount=format_rupees(amount_paise),
-            new_balance=format_rupees(new_balance_paise)
-        )
-        if is_new:
-            prefix = "Naya khaata banaya: " if lang == "hinglish" else "नया खाता बनाया: "
-            reply = f"{prefix}{display_name}। {reply}"
+        # Generate exact reply template in Python from validated record:
+        # "{name}: ₹{amount} udhaar likh diya. Ab baaki ₹{balance}."
+        amt_disp = f"{amount_paise // 100}" if amount_paise % 100 == 0 else f"{amount_paise / 100:.2f}"
+        bal_disp = f"{new_balance_paise // 100}" if new_balance_paise % 100 == 0 else f"{new_balance_paise / 100:.2f}"
+        reply = f"{display_name}: ₹{amt_disp} udhaar likh diya. Ab baaki ₹{bal_disp}."
 
         return {
             "customer_id": cust_id,
@@ -115,16 +118,16 @@ class KhataService:
         }
 
     @staticmethod
-    def record_payment(customer_name: str, amount: float, note: Optional[str] = None,
-                       utterance_id: Optional[str] = None, session_id: str = "default",
-                       lang: str = "hinglish") -> Dict[str, Any]:
+    def record_payment(customer_name: str, amount: float, customer_name_roman: Optional[str] = None,
+                       note: Optional[str] = None, utterance_id: Optional[str] = None,
+                       session_id: str = "default", lang: str = "hinglish") -> Dict[str, Any]:
         """Record payment received from a customer."""
         amount_paise = to_paise(amount)
         now = datetime.now(timezone.utc).isoformat()
 
         with get_db() as conn:
             cur = conn.cursor()
-            cust_id, display_name, _ = find_or_create_customer(conn, customer_name)
+            cust_id, display_name, is_new = find_or_create_customer(conn, customer_name, name_roman=customer_name_roman)
             
             cur.execute(
                 """
@@ -142,21 +145,11 @@ class KhataService:
         session.set_last_customer(cust_id, display_name)
         session.record_turn_entries([entry_id], [{"tool": "record_payment", "entry_id": entry_id}])
 
-        if new_balance_paise <= 0:
-            reply = render_template(
-                "payment_cleared",
-                lang=lang,
-                customer_name=display_name,
-                amount=format_rupees(amount_paise)
-            )
-        else:
-            reply = render_template(
-                "record_payment",
-                lang=lang,
-                customer_name=display_name,
-                amount=format_rupees(amount_paise),
-                new_balance=format_rupees(new_balance_paise)
-            )
+        # Generate exact reply template in Python from validated record:
+        # "{name}: ₹{amount} jama kar diya. Ab baaki ₹{balance}."
+        amt_disp = f"{amount_paise // 100}" if amount_paise % 100 == 0 else f"{amount_paise / 100:.2f}"
+        bal_disp = f"{new_balance_paise // 100}" if new_balance_paise % 100 == 0 else f"{new_balance_paise / 100:.2f}"
+        reply = f"{display_name}: ₹{amt_disp} jama kar diya. Ab baaki ₹{bal_disp}."
 
         return {
             "customer_id": cust_id,
@@ -168,30 +161,44 @@ class KhataService:
         }
 
     @staticmethod
-    def get_balance(customer_name: Optional[str] = None, session_id: str = "default",
-                    lang: str = "hinglish") -> Dict[str, Any]:
+    def get_balance(customer_name: Optional[str] = None, customer_name_roman: Optional[str] = None,
+                    session_id: str = "default", lang: str = "hinglish") -> Dict[str, Any]:
         """Fetch customer balance and last 5 entries."""
         session = session_manager.get_or_create(session_id)
         target_name = customer_name or session.last_customer_name
 
         if not target_name:
             return {
-                "reply_text": "Kiska balance dekhna hai? Kripya naam batayein."
+                "reply_text": "Kiska hisaab dekhna hai? Kripya naam batayein."
             }
 
         with get_db() as conn:
             cur = conn.cursor()
-            cust_id, display_name, is_new = find_or_create_customer(conn, target_name)
-            if is_new:
+            # Find customer without creating phantom record
+            cur.execute(
+                "SELECT id, name, name_roman FROM customers WHERE lower(name) = ? OR lower(name_roman) = ?;",
+                (target_name.lower(), (customer_name_roman or target_name).lower())
+            )
+            row = cur.fetchone()
+            if not row:
+                key = normalise_name_key(customer_name_roman or target_name)
+                cur.execute("SELECT id, name, name_roman FROM customers WHERE name_key = ?;", (key,))
+                row = cur.fetchone()
+
+            if not row:
                 return {
-                    "customer_name": display_name,
+                    "customer_name": target_name,
                     "balance_paise": 0,
                     "entries": [],
-                    "reply_text": f"{display_name} ka koi purana hisaab nahi hai."
+                    "reply_text": f"{target_name} ka koi purana hisaab nahi hai."
                 }
 
+            cust_id = row["id"]
+            display_name = row["name"]
+
             cur.execute("SELECT balance_paise FROM customer_balances WHERE customer_id = ?;", (cust_id,))
-            balance_paise = cur.fetchone()["balance_paise"]
+            row_bal = cur.fetchone()
+            balance_paise = row_bal["balance_paise"] if row_bal else 0
 
             cur.execute(
                 """
@@ -206,13 +213,8 @@ class KhataService:
             entries = [dict(r) for r in cur.fetchall()]
 
         session.set_last_customer(cust_id, display_name)
-
-        reply = render_template(
-            "get_balance",
-            lang=lang,
-            customer_name=display_name,
-            balance=format_rupees(balance_paise)
-        )
+        bal_disp = f"{balance_paise // 100}" if balance_paise % 100 == 0 else f"{balance_paise / 100:.2f}"
+        reply = f"{display_name} ka kul baaki ₹{bal_disp} hai."
 
         return {
             "customer_id": cust_id,
@@ -317,4 +319,3 @@ class KhataService:
             "draft_text": draft_text,
             "reply_text": reply
         }
-
