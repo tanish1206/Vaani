@@ -34,6 +34,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    err_msg = str(exc)
+    tb = traceback.format_exc()
+    print(f"[Unhandled Exception] {err_msg}\n{tb}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error", "detail": err_msg, "traceback": tb}
+    )
+
 # Connect API Routers
 app.include_router(text.router)
 app.include_router(voice.router)

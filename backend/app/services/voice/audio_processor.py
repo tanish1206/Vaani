@@ -15,7 +15,7 @@ import base64
 try:
     import av
     HAS_AV = True
-except ImportError:
+except Exception:
     HAS_AV = False
 
 MAX_AUDIO_BYTES = 10 * 1024 * 1024  # 10 MB cap (matches Gnani limits)
