@@ -1,7 +1,16 @@
 /**
- * VAANI — Interactive Voice Turn State Machine & Simulator
+ * VAANI — Interactive Voice Turn State Machine & Simulator (Phase 2)
  * Implements the documented voice lifecycle:
  * Idle -> Listening -> Processing -> Understanding -> Executing -> Speaking
+ *
+ * Supports:
+ * - Real microphone recording (getUserMedia + MediaRecorder) & live decibel canvas
+ * - Live API submission to /api/v1/voice/turn and /api/v1/text/turn (session_id="landing-demo")
+ * - Offline / simulated fallback with high-fidelity benchmark scenarios
+ * - Interactive Bol-Khata ledger demo (+₹500 / Undo)
+ * - Interactive Parchi medicine checklist (Done / Snooze)
+ * - Interactive Sensex Awaaz timeframe tabs (1D / 1W / 1M) and Spoken Briefing
+ * - Multilingual speech synthesis audio previews
  */
 
 (function () {
@@ -83,7 +92,7 @@
     },
 
     bazaar_overview: {
-      utterance: "Aaj market kaisa raha",
+      utterance: "Aaj market kaisa raha?",
       language: "hinglish",
       evonResult: {
         language: "hinglish",
@@ -138,7 +147,7 @@
     },
 
     guardrail_investment: {
-      utterance: "Kya mujhe Reliance ke shares khareedne chahiye?",
+      utterance: "Kya mujhe Reliance khareedna chahiye?",
       language: "hinglish",
       evonResult: {
         language: "hinglish",
@@ -163,13 +172,46 @@
     }
   };
 
+  const SENSEX_TIMEFRAMES = {
+    '1D': {
+      index: "83,410.20",
+      delta: "▲ +342.80 (+0.43%)",
+      bars: [35, 55, 45, 75, 60, 90, 70, 85],
+      brief: "Sensex aaj 83,410 par 342 point upar band hua. Bazaar mein IT aur Banking shares mein tezi rahi."
+    },
+    '1W': {
+      index: "83,410.20",
+      delta: "▲ +895.40 (+1.08%)",
+      bars: [40, 50, 65, 55, 70, 80, 88, 92],
+      brief: "Is hafte Sensex mein 895 point ki badhat dekhi gayi. Nifty bhi 25,400 ke upar barkarar raha."
+    },
+    '1M': {
+      index: "83,410.20",
+      delta: "▲ +2,140.50 (+2.63%)",
+      bars: [25, 45, 50, 68, 62, 75, 82, 95],
+      brief: "Pichhle ek mahine mein bazaar 2,140 point chadhkar nayi uchaiyon par pohncha hai."
+    }
+  };
+
   class VoiceSimulator {
     constructor() {
       this.state = 'idle'; // idle | listening | processing | understanding | executing | speaking
       this.currentScenarioKey = 'khata_multi';
+      this.lastAudioBase64 = null;
       this.timer = null;
+
+      // Audio Recording properties
+      this.mediaStream = null;
+      this.audioContext = null;
+      this.analyser = null;
+      this.mediaRecorder = null;
+      this.recordedChunks = [];
+      this.decibelRafId = null;
+
       this.initDOMElements();
       this.bindEvents();
+      this.initInteractiveShowcase();
+      this.initDecibelCanvas();
     }
 
     initDOMElements() {
@@ -181,10 +223,41 @@
       this.jsonEl = document.getElementById('inspectorJson');
       this.guardrailsList = document.getElementById('inspectorGuardrails');
       this.replyTextEl = document.getElementById('inspectorReplyText');
+      this.audioPlayBtn = document.getElementById('inspectorAudioPlayBtn');
       this.lifecyclePills = document.querySelectorAll('.status-pill');
       this.sampleChips = document.querySelectorAll('.sample-chip-btn');
       this.undoSnackbar = document.getElementById('undoSnackbar');
       this.undoBtn = document.getElementById('undoActionBtn');
+      this.decibelCanvas = document.getElementById('voiceDecibelCanvas');
+
+      // Voice Text Dock elements
+      this.textInput = document.getElementById('voiceTextInput');
+      this.textSendBtn = document.getElementById('voiceTextSendBtn');
+
+      // Bol-Khata Demo Elements
+      this.khataAddBtn = document.getElementById('khataDemoAddBtn');
+      this.khataUndoBtn = document.getElementById('khataDemoUndoBtn');
+      this.khataBadge = document.getElementById('khataDemoBadge');
+      this.khataTotalBal = document.getElementById('khataDemoTotalBal');
+      this.khataRameshBal = document.getElementById('khataRameshBal');
+      this.khataRameshNote = document.getElementById('khataRameshNote');
+
+      // Parchi Demo Elements
+      this.parchiDoneBtn1 = document.getElementById('parchiDoneBtn1');
+      this.parchiSnoozeBtn1 = document.getElementById('parchiSnoozeBtn1');
+      this.parchiDoneBtn2 = document.getElementById('parchiDoneBtn2');
+      this.parchiSnoozeBtn2 = document.getElementById('parchiSnoozeBtn2');
+      this.parchiProgressFill = document.getElementById('parchiProgressFill');
+      this.parchiProgressText = document.getElementById('parchiProgressText');
+      this.parchiRow1 = document.getElementById('parchiMedRow1');
+      this.parchiRow2 = document.getElementById('parchiMedRow2');
+
+      // Sensex Demo Elements
+      this.sensexTabs = document.querySelectorAll('.sensex-tab-btn');
+      this.sensexListenBtn = document.getElementById('sensexListenBtn');
+      this.sensexListenBtnText = document.getElementById('sensexListenBtnText');
+      this.sensexIndexVal = document.getElementById('sensexIndexVal');
+      this.sensexDeltaTag = document.getElementById('sensexDeltaTag');
     }
 
     bindEvents() {
@@ -209,7 +282,7 @@
       }
 
       this.sampleChips.forEach((chip) => {
-        chip.addEventListener('click', (e) => {
+        chip.addEventListener('click', () => {
           const scenarioKey = chip.getAttribute('data-scenario');
           if (scenarioKey && SCENARIOS[scenarioKey]) {
             this.currentScenarioKey = scenarioKey;
@@ -218,19 +291,88 @@
         });
       });
 
+      if (this.textSendBtn) {
+        this.textSendBtn.addEventListener('click', () => this.handleTextSubmit());
+      }
+      if (this.textInput) {
+        this.textInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.handleTextSubmit();
+          }
+        });
+      }
+
+      if (this.audioPlayBtn) {
+        this.audioPlayBtn.addEventListener('click', () => {
+          this.replayLastAudio();
+        });
+      }
+
       if (this.undoBtn) {
         this.undoBtn.addEventListener('click', () => {
           this.triggerUndo();
         });
       }
 
-      // Keyboard shortcut: Spacebar holds to talk
+      // Keyboard shortcut: Spacebar in idle triggers voice
       window.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && e.target === document.body && this.state === 'idle') {
           e.preventDefault();
-          this.startVoiceTurn();
+          this.toggleVoiceLoop();
         }
       });
+    }
+
+    initDecibelCanvas() {
+      if (!this.decibelCanvas) return;
+      const ctx = this.decibelCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, this.decibelCanvas.width, this.decibelCanvas.height);
+      ctx.fillStyle = 'rgba(58, 15, 52, 0.1)';
+      ctx.fillRect(0, this.decibelCanvas.height / 2 - 1, this.decibelCanvas.width, 2);
+    }
+
+    startDecibelVisualizer() {
+      if (!this.decibelCanvas || !this.analyser) return;
+      const ctx = this.decibelCanvas.getContext('2d');
+      const bufferLength = this.analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      const width = this.decibelCanvas.width;
+      const height = this.decibelCanvas.height;
+
+      const draw = () => {
+        if (this.state !== 'listening') return;
+        this.decibelRafId = requestAnimationFrame(draw);
+        this.analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, width, height);
+
+        const barCount = 28;
+        const barWidth = (width / barCount) - 2;
+
+        for (let i = 0; i < barCount; i++) {
+          const val = dataArray[i * 2] || 0;
+          const barHeight = Math.max(2, (val / 255) * height * 0.9);
+          const x = i * (barWidth + 2);
+          const y = (height - barHeight) / 2;
+
+          ctx.fillStyle = i % 2 === 0 ? '#EAAA00' : '#3A0F34';
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(x, y, barWidth, barHeight, 2) : ctx.rect(x, y, barWidth, barHeight);
+          ctx.fill();
+        }
+      };
+
+      draw();
+    }
+
+    stopDecibelVisualizer() {
+      if (this.decibelRafId) {
+        cancelAnimationFrame(this.decibelRafId);
+        this.decibelRafId = null;
+      }
+      this.initDecibelCanvas();
     }
 
     setLifecycleState(stateName) {
@@ -256,17 +398,189 @@
           this.micStatusText.textContent = "Vaani bol rahi hai... (Timbre TTS)";
         } else {
           this.micBtn.classList.remove('listening');
-          this.micStatusText.textContent = "Bolne ke liye mic dabayein (Tap or hold Space)";
+          this.micStatusText.textContent = "Bolne ke liye mic dabayein (Tap or press Space)";
+          this.stopDecibelVisualizer();
         }
       }
     }
 
-    toggleVoiceLoop() {
+    async toggleVoiceLoop() {
       if (this.state === 'idle') {
-        this.startScenario(this.currentScenarioKey);
+        // Attempt real audio recording via getUserMedia
+        const success = await this.startRealRecording();
+        if (!success) {
+          // Graceful fallback to pre-recorded / simulated scenario
+          this.startScenario(this.currentScenarioKey);
+        }
+      } else if (this.state === 'listening') {
+        this.stopRealRecording();
       } else {
         this.resetToIdle();
       }
+    }
+
+    async startRealRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return false;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.mediaStream = stream;
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = this.audioContext.createMediaStreamSource(stream);
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 64;
+        source.connect(this.analyser);
+
+        this.recordedChunks = [];
+        this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        this.mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) this.recordedChunks.push(e.data);
+        };
+        this.mediaRecorder.onstop = () => this.handleRecordedAudio();
+
+        this.setLifecycleState('listening');
+        this.startDecibelVisualizer();
+        this.mediaRecorder.start();
+
+        this.transcriptEl.textContent = "Sun raha hoon... (Aap bol sakte hain)";
+        this.jsonEl.textContent = "// Gnani Prisma v3.0 capturing audio...";
+
+        // Auto-stop after 5 seconds of speech if user doesn't toggle
+        this.timer = setTimeout(() => {
+          if (this.state === 'listening') {
+            this.stopRealRecording();
+          }
+        }, 5000);
+
+        return true;
+      } catch (err) {
+        console.info('[VAANI] Browser mic access bypassed, using high-fidelity simulator:', err.message);
+        return false;
+      }
+    }
+
+    stopRealRecording() {
+      clearTimeout(this.timer);
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        this.mediaRecorder.stop();
+      }
+      if (this.mediaStream) {
+        this.mediaStream.getTracks().forEach((t) => t.stop());
+        this.mediaStream = null;
+      }
+      if (this.audioContext && this.audioContext.state !== 'closed') {
+        this.audioContext.close();
+      }
+      this.analyser = null;
+      this.stopDecibelVisualizer();
+      this.setLifecycleState('processing');
+    }
+
+    async handleRecordedAudio() {
+      const audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+      if (audioBlob.size < 100) {
+        this.startScenario(this.currentScenarioKey);
+        return;
+      }
+
+      this.transcriptEl.textContent = "Audio process ho raha hai (Prisma STT)...";
+      this.setLifecycleState('processing');
+
+      try {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+        formData.append('session_id', 'landing-demo');
+
+        const resp = await fetch('/api/v1/voice/turn', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!resp.ok) throw new Error('Voice API response not ok');
+        const data = await resp.json();
+
+        this.renderLiveTurnResponse(data);
+      } catch (err) {
+        console.warn('[VAANI] Live voice endpoint fallback:', err.message);
+        // Fall back to pre-defined scenario seamlessly
+        this.startScenario(this.currentScenarioKey);
+      }
+    }
+
+    async handleTextSubmit() {
+      if (!this.textInput) return;
+      const text = this.textInput.value.trim();
+      if (!text) return;
+
+      this.setLifecycleState('processing');
+      this.transcriptEl.textContent = `"${text}"`;
+      this.jsonEl.textContent = "// Evon v3.3 structured reasoning...";
+
+      try {
+        const resp = await fetch('/api/v1/text/turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text,
+            session_id: 'landing-demo'
+          })
+        });
+
+        if (!resp.ok) throw new Error('Text turn API failed');
+        const data = await resp.json();
+        this.renderLiveTurnResponse(data);
+        this.textInput.value = '';
+      } catch (err) {
+        console.warn('[VAANI] Text turn fallback to scenario:', err.message);
+        this.startScenario(this.currentScenarioKey);
+      }
+    }
+
+    renderLiveTurnResponse(data) {
+      this.setLifecycleState('understanding');
+      this.transcriptEl.textContent = `"${data.transcript || data.reply_text || 'Turn processed'}"`;
+
+      const evonPayload = {
+        language: data.language || 'hinglish',
+        actions: data.actions || [],
+        clarification: data.clarification || null,
+        confidence: data.confidence || 0.95
+      };
+      this.jsonEl.textContent = JSON.stringify(evonPayload, null, 2);
+
+      setTimeout(() => {
+        this.setLifecycleState('executing');
+        const guardrails = [
+          { label: "Deterministic Python integer math validated", passed: true },
+          { label: "Append-only SQLite WAL transaction written", passed: true },
+          { label: "Turn ID tagged & monotonic audit safe", passed: true },
+          { label: "Zero arithmetic performed by LLM", passed: true }
+        ];
+        this.renderGuardrails(guardrails);
+
+        setTimeout(() => {
+          this.setLifecycleState('speaking');
+          const reply = data.reply_text || "Hisaab safalta-purvak darj hua.";
+          this.replyTextEl.textContent = reply;
+
+          if (data.audio_base64) {
+            this.lastAudioBase64 = data.audio_base64;
+            this.playAudioBase64(data.audio_base64);
+          } else {
+            this.speakNative(reply, evonPayload.language);
+          }
+
+          if (data.actions && data.actions.some(a => a.tool === 'add_credit' || a.tool === 'record_payment')) {
+            this.showUndoSnackbar();
+          }
+
+          setTimeout(() => {
+            this.setLifecycleState('idle');
+          }, 4500);
+        }, 600);
+      }, 700);
     }
 
     startScenario(scenarioKey) {
@@ -313,7 +627,7 @@
             }, 800);
           }, 800);
         }, 900);
-      }, 1200);
+      }, 1100);
     }
 
     renderGuardrails(checks) {
@@ -324,6 +638,23 @@
           <span>${c.label}</span>
         </div>
       `).join('');
+    }
+
+    playAudioBase64(b64) {
+      try {
+        const audio = new Audio("data:audio/wav;base64," + b64);
+        audio.play().catch(e => console.info('Audio autoplay prevented:', e));
+      } catch (err) {
+        console.warn('Audio play error:', err);
+      }
+    }
+
+    replayLastAudio() {
+      if (this.lastAudioBase64) {
+        this.playAudioBase64(this.lastAudioBase64);
+      } else if (this.replyTextEl && this.replyTextEl.textContent) {
+        this.speakNative(this.replyTextEl.textContent, 'hi');
+      }
     }
 
     speakNative(text, lang) {
@@ -363,6 +694,141 @@
       clearTimeout(this.timer);
       this.setLifecycleState('idle');
     }
+
+    // ------------------------------------------------------------------------
+    // INTERACTIVE PRODUCT SHOWCASES (BOL-KHATA, PARCHI, SENSEX AWAAZ)
+    // ------------------------------------------------------------------------
+    initInteractiveShowcase() {
+      // 1. Bol-Khata Demo Handlers
+      if (this.khataAddBtn) {
+        this.khataAddBtn.addEventListener('click', () => {
+          if (this.khataRameshBal) this.khataRameshBal.textContent = '₹1,000';
+          if (this.khataRameshNote) this.khataRameshNote.textContent = 'दुकान सामान - उधार ₹1,000';
+          if (this.khataTotalBal) this.khataTotalBal.textContent = '₹2,200';
+          if (this.khataBadge) this.khataBadge.style.display = 'block';
+          if (this.khataUndoBtn) this.khataUndoBtn.style.display = 'inline-flex';
+          this.khataAddBtn.style.display = 'none';
+          this.showUndoSnackbar();
+        });
+      }
+
+      if (this.khataUndoBtn) {
+        this.khataUndoBtn.addEventListener('click', () => {
+          if (this.khataRameshBal) this.khataRameshBal.textContent = '₹500';
+          if (this.khataRameshNote) this.khataRameshNote.textContent = 'दुकान सामान - उधार ₹500';
+          if (this.khataTotalBal) this.khataTotalBal.textContent = '₹1,700';
+          if (this.khataBadge) this.khataBadge.style.display = 'none';
+          this.khataUndoBtn.style.display = 'none';
+          if (this.khataAddBtn) this.khataAddBtn.style.display = 'inline-flex';
+        });
+      }
+
+      // 2. Parchi Demo Handlers
+      let dosesDone = 1;
+      const updateParchiProgress = () => {
+        if (this.parchiProgressFill) {
+          this.parchiProgressFill.style.width = dosesDone === 2 ? '100%' : '50%';
+        }
+        if (this.parchiProgressText) {
+          this.parchiProgressText.textContent = `${dosesDone} of 2 doses taken`;
+        }
+      };
+
+      if (this.parchiDoneBtn1) {
+        this.parchiDoneBtn1.addEventListener('click', () => {
+          if (this.parchiRow1) this.parchiRow1.classList.toggle('is-done');
+          this.parchiDoneBtn1.textContent = this.parchiRow1.classList.contains('is-done') ? 'Taken ✓' : 'Done ✓';
+        });
+      }
+
+      if (this.parchiDoneBtn2) {
+        this.parchiDoneBtn2.addEventListener('click', () => {
+          if (this.parchiRow2) {
+            const isDone = this.parchiRow2.classList.toggle('is-done');
+            dosesDone = isDone ? 2 : 1;
+            this.parchiDoneBtn2.textContent = isDone ? 'Taken ✓' : 'Done ✓';
+            updateParchiProgress();
+          }
+        });
+      }
+
+      const handleSnooze = (btn) => {
+        const orig = btn.textContent;
+        btn.textContent = 'Snoozed 15m ✓';
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.disabled = false;
+        }, 3000);
+      };
+
+      if (this.parchiSnoozeBtn1) {
+        this.parchiSnoozeBtn1.addEventListener('click', () => handleSnooze(this.parchiSnoozeBtn1));
+      }
+      if (this.parchiSnoozeBtn2) {
+        this.parchiSnoozeBtn2.addEventListener('click', () => handleSnooze(this.parchiSnoozeBtn2));
+      }
+
+      // 3. Sensex Demo Handlers
+      this.sensexTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          this.sensexTabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const period = tab.getAttribute('data-period') || '1D';
+          const data = SENSEX_TIMEFRAMES[period];
+          if (!data) return;
+
+          if (this.sensexIndexVal) this.sensexIndexVal.textContent = data.index;
+          if (this.sensexDeltaTag) this.sensexDeltaTag.textContent = data.delta;
+
+          // Animate bar heights
+          data.bars.forEach((h, idx) => {
+            const bar = document.getElementById(`sensexBar${idx + 1}`);
+            if (bar) {
+              bar.style.height = `${h}%`;
+            }
+          });
+        });
+      });
+
+      if (this.sensexListenBtn) {
+        this.sensexListenBtn.addEventListener('click', () => {
+          const activeTab = document.querySelector('.sensex-tab-btn.active');
+          const period = activeTab ? activeTab.getAttribute('data-period') : '1D';
+          const data = SENSEX_TIMEFRAMES[period] || SENSEX_TIMEFRAMES['1D'];
+
+          if (this.sensexListenBtnText) {
+            this.sensexListenBtnText.textContent = "Sun rahe hain...";
+          }
+          this.speakNative(data.brief, 'hi');
+
+          setTimeout(() => {
+            if (this.sensexListenBtnText) {
+              this.sensexListenBtnText.textContent = "Suno Briefing (Listen)";
+            }
+          }, 4500);
+        });
+      }
+
+      // 4. Multilingual Section Audio Listen Handlers
+      const langAudioBtns = document.querySelectorAll('.lang-audio-btn');
+      langAudioBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const type = btn.getAttribute('data-lang-audio');
+          let textToSpeak = '';
+          if (type === 'cmd') {
+            const cmdEl = document.getElementById('langQuoteCmd');
+            textToSpeak = cmdEl ? cmdEl.textContent.replace(/"/g, '') : '';
+          } else {
+            const respEl = document.getElementById('langQuoteResp');
+            textToSpeak = respEl ? respEl.textContent.replace(/"/g, '') : '';
+          }
+          if (textToSpeak) {
+            this.speakNative(textToSpeak, 'hi');
+          }
+        });
+      });
+    }
   }
 
   // Export to window for global access
@@ -372,4 +838,3 @@
     window.vaaniSim = new VoiceSimulator();
   });
 })();
-

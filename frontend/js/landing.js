@@ -21,9 +21,9 @@
       heroCopy: "Apne kaam, hisaab aur zaroori jaankari — ab sirf apni awaaz se.",
       startSpeaking: "Start Speaking",
       watchDemo: "Watch Demo",
-      finalCtaTitle: "Boliye. Vaani Sambhal Legi.",
-      finalCtaTagline: "Voice-first intelligence crafted for Indian enterprise, local kiranas, and families.",
-      finalCtaBtn: "Experience Vaani Now"
+      finalCtaTitle: "Your business. Your voice. Your Vaani.",
+      finalCtaTagline: "Apne roz ke kaam ko aur aasaan banaiye. Boliye, Vaani sambhal legi.",
+      finalCtaBtn: "Start Speaking"
     },
     hi: {
       brandTagline: "बोलिए। वाणी संभाल लेगी।",
@@ -37,9 +37,9 @@
       heroCopy: "अपने काम, हिसाब और ज़रूरी जानकारी — अब सिर्फ़ अपनी आवाज़ से।",
       startSpeaking: "बोलना शुरू करें",
       watchDemo: "डेमो देखें",
-      finalCtaTitle: "बोलिए। वाणी संभाल लेगी।",
-      finalCtaTagline: "भारतीय दुकानों, छोटे व्यापारियों और परिवारों के लिए आवाज़ पर चलने वाला एआई सहायक।",
-      finalCtaBtn: "वाणी का अनुभव लें"
+      finalCtaTitle: "आपका व्यापार। आपकी आवाज़। आपकी वाणी।",
+      finalCtaTagline: "अपने रोज़ के काम को और आसान बनाइए। बोलिए, वाणी संभाल लेगी।",
+      finalCtaBtn: "बोलना शुरू करें"
     },
     mr: {
       brandTagline: "बोला. वाणी सांभाळून घेईल.",
@@ -53,9 +53,9 @@
       heroCopy: "आपली कामे, हिशोब आणि महत्त्वाची माहिती — आता फक्त आपल्या आवाजाने.",
       startSpeaking: "बोलायला सुरुवात करा",
       watchDemo: "डेमो पाहा",
-      finalCtaTitle: "बोला. वाणी सांभाळून घेईल.",
-      finalCtaTagline: "महाराष्ट्रातील व्यापारी, किराणा दुकाने आणि कुटुंबांसाठी अस्सल मराठी व कोड-मिक्स्ड व्हॉइस एआय.",
-      finalCtaBtn: "वाणी सुरू करा"
+      finalCtaTitle: "तुमचा व्यवसाय. तुमचा आवाज. तुमची वाणी.",
+      finalCtaTagline: "आपली रोजची कामे सोपी करा. बोला, वाणी सांभाळून घेईल.",
+      finalCtaBtn: "बोलायला सुरुवात करा"
     }
   };
 
@@ -134,12 +134,24 @@
       faqItems.forEach((item) => {
         const questionBtn = item.querySelector('.faq-question-btn');
         if (questionBtn) {
-          questionBtn.addEventListener('click', () => {
+          const toggleItem = () => {
             const isOpen = item.classList.contains('open');
-            // Close others for clean accordion
-            faqItems.forEach((f) => f.classList.remove('open'));
+            faqItems.forEach((f) => {
+              f.classList.remove('open');
+              const btn = f.querySelector('.faq-question-btn');
+              if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
             if (!isOpen) {
               item.classList.add('open');
+              questionBtn.setAttribute('aria-expanded', 'true');
+            }
+          };
+
+          questionBtn.addEventListener('click', toggleItem);
+          questionBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleItem();
             }
           });
         }
@@ -148,12 +160,42 @@
 
     initLanguageTabs() {
       const langTabs = document.querySelectorAll('.lang-tab-pill');
+      const langData = {
+        hi: {
+          cmd: '"रमेश को दो सौ उधार लिख दो और सुनीता ने डेढ़ सौ दिए।"',
+          cmdTrans: 'Action: Credit ₹200 to Ramesh, Record payment of ₹150 from Sunita.',
+          resp: '"रमेश के खाते में ₹200 जोड़ दिए, अब बाकी ₹850 है। सुनीता के ₹150 जमा हो गए।"',
+          respTrans: 'Audio confirmation delivered back in native natural speech.'
+        },
+        mr: {
+          cmd: '"रमेश ला दोनशे उधार लिहा आणि सुनीताने दीडशे दिले."',
+          cmdTrans: 'Action: Credit ₹200 to Ramesh, Record payment of ₹150 from Sunita.',
+          resp: '"रमेश यांच्या खात्यात ₹200 उधार नोंदवले. आता बाकी ₹850 आहे. सुनीताचे ₹150 जमा झाले."',
+          respTrans: 'Marathi Timbre v2.5 voice confirmation.'
+        },
+        en: {
+          cmd: '"Ramesh ko 200 udhaar likh de aur Sunita ne 150 diye"',
+          cmdTrans: 'Code-mixed Hinglish natural shop command.',
+          resp: '"Ramesh ke khaate mein ₹200 jod diye (ab baaki ₹850). Sunita ke ₹150 jama ho gaye."',
+          respTrans: 'Code-mixed speech output with confirmed numbers.'
+        }
+      };
+
       langTabs.forEach((tab) => {
         tab.addEventListener('click', () => {
           langTabs.forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
           const targetLang = tab.getAttribute('data-lang');
-          if (targetLang) {
+          if (targetLang && langData[targetLang]) {
+            const data = langData[targetLang];
+            const cmdEl = document.getElementById('langQuoteCmd');
+            const cmdTransEl = document.getElementById('langQuoteCmdTrans');
+            const respEl = document.getElementById('langQuoteResp');
+            const respTransEl = document.getElementById('langQuoteRespTrans');
+            if (cmdEl) cmdEl.textContent = data.cmd;
+            if (cmdTransEl) cmdTransEl.textContent = data.cmdTrans;
+            if (respEl) respEl.textContent = data.resp;
+            if (respTransEl) respTransEl.textContent = data.respTrans;
             this.switchLanguage(targetLang);
           }
         });
@@ -179,14 +221,15 @@
 
     initScrollReveals() {
       const targets = document.querySelectorAll(
-        '.showcase-stage .mockup-card-khata, .showcase-stage .mockup-card-parchi, .showcase-stage .mockup-card-sensex, .showcase-stage .mockup-phone-frame, #voice-lab, #modules, #how-it-works, #faq, .final-cta-section, .languages-tab-wrapper, .pipeline-diagram, .modules-grid'
+        '.showcase-stage .mockup-card-khata, .showcase-stage .mockup-card-parchi, .showcase-stage .mockup-card-sensex, .showcase-stage .mockup-phone-frame, #voice-lab, #modules, #trust-safety, #how-it-works, #faq, .final-cta-section, .languages-tab-wrapper, .pipeline-diagram, .modules-grid, .trust-grid'
       );
 
       targets.forEach((el) => {
         el.classList.add('reveal-on-scroll');
         if (
           el.classList.contains('modules-grid') ||
-          el.classList.contains('pipeline-diagram')
+          el.classList.contains('pipeline-diagram') ||
+          el.classList.contains('trust-grid')
         ) {
           el.classList.add('stagger-children');
         }
