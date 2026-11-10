@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.config import settings, mask_credential
 from app.db.session import get_db
 from app.db.seed import reset_demo_data
+from app.services.voice.voice_settings import VoiceSettingsService
 from app.modules.bazaar.service import BazaarService
 
 router = APIRouter(prefix="/api/v1/settings", tags=["Settings & Diagnostics"])
@@ -32,15 +33,16 @@ async def get_settings():
     # Return defaults for missing keys
     defaults = {
         "language": "auto",
-        "voice_hi": "sia",
-        "voice_mr": "sia",
-        "voice_en": "sia",
+        "voice_id": VoiceSettingsService.get_selected_voice_id(),
+        "voice_hi": "Bhavna",
+        "voice_mr": "Madhuri",
+        "voice_en": "Radhika",
         "speech_rate": "1.0",
         "confirm_threshold": "5000",
         "snooze_duration_mins": "10",
         "privacy_mode": "balanced",
         "theme": "light",
-        "demo_mode": "true" if settings.is_demo_mode() else "false"
+        "demo_mode": "false"
     }
     defaults.update(user_settings)
     return defaults
