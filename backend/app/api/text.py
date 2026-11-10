@@ -32,12 +32,21 @@ async def handle_text_turn(req: TextTurnRequest):
         dry_run=is_ephemeral
     )
 
-    # Synthesize speech using the user's selected Gnani voice
+    # Synthesize speech using the user's selected Gnani voice and model
     reply_text = result.get("reply_text", "")
     selected_voice = VoiceSettingsService.get_selected_voice_id()
+    selected_model = VoiceSettingsService.get_selected_tts_model()
+    speed = VoiceSettingsService.get_selected_speech_rate()
     result["voice_id"] = selected_voice
+    result["tts_model"] = selected_model
 
-    tts_bytes = await GnaniClient.synthesize(text=reply_text, voice_id=selected_voice)
+    tts_bytes = await GnaniClient.synthesize(
+        text=reply_text,
+        voice_id=selected_voice,
+        model=selected_model,
+        language=result.get("language", "hi-IN"),
+        speed=speed
+    )
     if tts_bytes:
         result["audio_base64"] = AudioProcessor.encode_base64_audio(tts_bytes)
         result["has_audio_bytes"] = True

@@ -33,10 +33,11 @@ async def get_settings():
     # Return defaults for missing keys
     defaults = {
         "language": "auto",
+        "tts_model": VoiceSettingsService.get_selected_tts_model(),
         "voice_id": VoiceSettingsService.get_selected_voice_id(),
-        "voice_hi": "Bhavna",
-        "voice_mr": "Madhuri",
-        "voice_en": "Radhika",
+        "voice_hi": VoiceSettingsService.get_selected_voice_id(),
+        "voice_mr": "Zahira",
+        "voice_en": "Kaveri",
         "speech_rate": "1.0",
         "confirm_threshold": "5000",
         "snooze_duration_mins": "10",
