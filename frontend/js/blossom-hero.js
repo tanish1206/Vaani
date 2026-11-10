@@ -51,6 +51,7 @@
       this.svg = document.getElementById('botanicalBlossomSvg');
       this.progressFill = document.getElementById('heroBlossomProgress');
       this.scrollHint = document.getElementById('heroScrollHint');
+      this.stageBadge = document.getElementById('heroBotanicalStageBadge');
 
       // Stem Elements
       this.stemPath = document.getElementById('stemPath');
@@ -362,7 +363,8 @@
       this.leaves.forEach((leaf, i) => {
         if (leaf) {
           const s = leafScales[i];
-          const rot = leafRotations[i];
+          const organicSway = Math.sin(Date.now() * 0.0018 + i * 1.4) * 2.5 * smoothstep(0.75, 1.0, p);
+          const rot = leafRotations[i] + organicSway;
           const [lx, ly] = leafOrigins[i];
           setSvgTransform(leaf, lx, ly, s, rot);
           setSvgOpacity(leaf, clamp(s * 1.5, 0, 1));
@@ -502,6 +504,18 @@
       // ----------------------------------------------------------------------
       // EDITORIAL TYPOGRAPHY & OVERLAY CHOREOGRAPHY
       // ----------------------------------------------------------------------
+      if (this.stageBadge) {
+        if (p < 0.20) {
+          this.stageBadge.textContent = "01 / SOWING \u2022 DORMANT SEED IN SOIL";
+        } else if (p < 0.45) {
+          this.stageBadge.textContent = "02 / GERMINATION \u2022 ORGANIC STEM ASCENT";
+        } else if (p < 0.75) {
+          this.stageBadge.textContent = "03 / ANTHESIS \u2022 COROLLA UNFOLDING";
+        } else {
+          this.stageBadge.textContent = "04 / FULL BLOOM \u2022 BOLIYE, VAANI SAMBHAL LEGI";
+        }
+      }
+
       this.revealNodes.forEach(node => {
         const start = parseFloat(node.dataset.revealAt || '0.7');
         const end = parseFloat(node.dataset.revealEnd || String(Math.min(1, start + 0.16)));
