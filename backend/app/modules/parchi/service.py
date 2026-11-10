@@ -27,6 +27,7 @@ class ParchiService:
         now = datetime.now(timezone.utc)
         today_str = date.today().isoformat()
         days = duration_days or 5
+        db_patient = patient_label.strip() if (patient_label and patient_label.strip()) else "Self"
 
         with get_db() as conn:
             cur = conn.cursor()
@@ -37,7 +38,7 @@ class ParchiService:
                 INSERT INTO prescriptions (patient_label, doctor_note, start_date, duration_days, status, utterance_id, created_at)
                 VALUES (?, ?, ?, ?, 'active', ?, ?);
                 """,
-                (patient_label, doctor_note, today_str, days, utterance_id, now.isoformat())
+                (db_patient, doctor_note, today_str, days, utterance_id, now.isoformat())
             )
             presc_id = cur.lastrowid
 
@@ -81,33 +82,56 @@ class ParchiService:
         first_med = medicines[0] if medicines else {}
         custom_time = first_med.get("time_str")
 
+        # Localized schedule formatting
+        time_suffix = "बजे" if lang == "hi" else ("वाजता" if lang == "mr" else "baje")
+        day_suffix = "दिन" if lang == "hi" else ("दिवस" if lang == "mr" else "din")
+
         if custom_time:
-            time_suffix = "बजे" if lang == "hi" else "baje"
-            day_suffix = "दिन" if lang == "hi" else "din"
             schedule_text = f"{custom_time} {time_suffix}, {days} {day_suffix}"
         else:
-            if len(first_med.get("times_of_day", [])) > 2:
-                times_summary = "दिन में तीन बार" if lang == "hi" else "din mein teen baar"
-            elif len(first_med.get("times_of_day", [])) == 1:
-                slot = first_med.get("times_of_day", ["morning"])[0]
+            times = first_med.get("times_of_day", [])
+            if len(times) > 2:
+                times_summary = "दिन में तीन बार" if lang == "hi" else ("दिवसातून तीन वेळा" if lang == "mr" else "din mein teen baar")
+            elif len(times) == 1:
+                slot = times[0] if times else "morning"
                 slot_hi = {"morning": "सुबह", "afternoon": "दोपहर", "evening": "शाम", "night": "रात"}
-                times_summary = slot_hi.get(slot, slot) if lang == "hi" else slot
+                slot_mr = {"morning": "सकाळी", "afternoon": "दुपारी", "evening": "संध्याकाळी", "night": "रात्री"}
+                slot_hinglish = {"morning": "subah", "afternoon": "dopahar", "evening": "shaam", "night": "raat"}
+                if lang == "hi":
+                    times_summary = slot_hi.get(slot, slot)
+                elif lang == "mr":
+                    times_summary = slot_mr.get(slot, slot)
+                else:
+                    times_summary = slot_hinglish.get(slot, slot)
             else:
-                times_summary = "सुबह और शाम" if lang == "hi" else "subah aur shaam"
+                times_summary = "सुबह और शाम" if lang == "hi" else ("सकाळी आणि संध्याकाळी" if lang == "mr" else "subah aur shaam")
 
             food_note = ""
             if first_med.get("with_food") == "after":
-                food_note = ", खाने के बाद" if lang == "hi" else ", khaane ke baad"
+                food_note = ", खाने के बाद" if lang == "hi" else (", जेवणानंतर" if lang == "mr" else ", khaane ke baad")
             elif first_med.get("with_food") == "before":
-                food_note = ", खाने से पहले" if lang == "hi" else ", khaane se pehle"
+                food_note = ", खाने से पहले" if lang == "hi" else (", जेवणापूर्वी" if lang == "mr" else ", khaane se pehle")
 
-            day_suffix = "दिन" if lang == "hi" else "din"
             schedule_text = f"{times_summary}{food_note}, {days} {day_suffix}"
+
+        # Dynamic patient prefix (Never hallucinate or default to demo names)
+        if patient_label and patient_label.strip() and patient_label.lower() not in ["none", "null", "mere liye", "self"]:
+            if lang == "hi":
+                patient_prefix = f"{patient_label} के लिए "
+            elif lang == "mr":
+                patient_prefix = f"{patient_label} यांच्यासाठी "
+            elif lang == "en":
+                patient_prefix = f"for {patient_label}: "
+            else:
+                patient_prefix = f"{patient_label} ke liye "
+        else:
+            patient_prefix = ""
 
         reply = render_template(
             "save_prescription",
             lang=lang,
-            patient_label=patient_label,
+            patient_prefix=patient_prefix,
+            patient_label=patient_label or "",
             med_name=med_summary,
             schedule=schedule_text
         )

@@ -80,10 +80,10 @@ TEMPLATES: Dict[str, Dict[str, str]] = {
         "en": "Corrected entry to {new_amount}. Balance is now {new_balance}."
     },
     "save_prescription": {
-        "hinglish": "{patient_label} ke liye {med_name}: {schedule}. Main yaad dilaunga.",
-        "hi": "{patient_label} के लिए {med_name}: {schedule}। मैं समय पर याद दिलाऊँगा।",
-        "mr": "{patient_label} यांच्यासाठी {med_name}: {schedule}. मी आठवण करून देईन.",
-        "en": "Saved prescription for {patient_label}: {med_name} {schedule}. Reminders scheduled."
+        "hinglish": "{patient_prefix}{med_name}: {schedule}. Main yaad dilaunga.",
+        "hi": "{patient_prefix}{med_name}: {schedule}। मैं समय पर याद दिलाऊँगा।",
+        "mr": "{patient_prefix}{med_name}: {schedule}. मी आठवण करून देईन.",
+        "en": "Saved prescription {patient_prefix}for {med_name} {schedule}. Reminders scheduled."
     },
     "decline_medical": {
         "hinglish": "Kshama karein, Vaani dawa lene ya badalne ki salaah nahi deta. Kripya doctor se sampark karein.",

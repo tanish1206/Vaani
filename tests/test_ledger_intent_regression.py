@@ -230,3 +230,30 @@ async def test_parchi_roman():
     assert "Dadaji" in res["reply_text"]
     assert "Paracetamol" in res["reply_text"]
     assert "Maa ke liye BP ki goli" not in res["reply_text"]
+
+@pytest.mark.asyncio
+async def test_parchi_no_patient():
+    """Medicine reminder with no explicit patient must not hallucinate 'Maa' or any name."""
+    transcript = "paracetamol 8 baje yaad dilao"
+    res = await VoicePipeline.run_turn(transcript, session_id="test-parchi-nopatient")
+
+    assert res["actions"]
+    act = res["actions"][0]
+    assert act["tool"] == "save_prescription"
+    assert act["args"]["patient_label"] is None
+    assert "paracetamol" in act["args"]["medicines"][0]["name"].lower()
+    assert "Maa" not in res["reply_text"]
+    assert "Paracetamol: 08:00 baje" in res["reply_text"]
+
+@pytest.mark.asyncio
+async def test_parchi_marathi():
+    """Marathi medicine reminder with Devanagari numerals must be accurately localized."""
+    transcript = "दादाजींचे औषध ८ वाजता आठवण करा"
+    res = await VoicePipeline.run_turn(transcript, session_id="test-parchi-mr")
+
+    assert res["actions"]
+    act = res["actions"][0]
+    assert act["tool"] == "save_prescription"
+    assert res["language"] == "mr"
+    assert "दादाजी" in res["reply_text"]
+    assert "मी आठवण करून देईन" in res["reply_text"]

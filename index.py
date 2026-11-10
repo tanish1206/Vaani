@@ -4,3 +4,4 @@ Re-exports the FastAPI 'app' instance.
 """
 
 from main import app
+

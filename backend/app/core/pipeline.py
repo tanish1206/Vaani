@@ -242,9 +242,10 @@ class VoicePipeline:
                 elif tool == "get_balance":
                     replies.append(f"{name} ka kul baaki ₹0 hai.")
                 elif tool == "save_prescription":
-                    p = args.get("patient_label", "Maa")
+                    p = args.get("patient_label")
                     med = args.get("medicines", [{}])[0].get("name", "Dawa")
-                    replies.append(f"{p} ke liye {med}: reminder darj ho gaya. Main yaad dilaunga.")
+                    p_prefix = f"{p} ke liye " if p else ""
+                    replies.append(f"{p_prefix}{med}: reminder darj ho gaya. Main yaad dilaunga.")
 
         t_exec_ms = (time.perf_counter() - t_exec_start) * 1000
         combined_reply = " ".join(replies) if replies else "Aapka aadesh samajh liya gaya hai."

@@ -27,10 +27,34 @@ SPOKEN_NUMBERS = {
     "पाँच हजार": 5000, "पाच हजार": 5000, "हज़ार": 1000
 }
 
+DEV_DIGITS = {
+    '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+    '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+}
+
+def normalize_devanagari_digits(s: str) -> str:
+    """Convert Devanagari numerals to standard ASCII digits."""
+    return "".join(DEV_DIGITS.get(c, c) for c in s)
+
 HONORIFICS = {
     "bhai", "bhaiya", "ji", "kaka", "bhau", "dada", "sir", "saheb", "seth",
     "भाई", "भैया", "जी", "काका", "भाऊ", "दादा", "सर", "साहेब", "सेठ"
 }
+
+FAM_TERMS = [
+    "dadaji", "dada", "dadiji", "dadi", "nanaji", "nana", "naniji", "nani",
+    "maa", "mummy", "papa", "pitaji", "bhai", "behan", "bete", "bacche", "aai", "baba", "kaka", "kaki",
+    "दादाजी", "दादा", "दादीजी", "दादी", "नानाजी", "नाना", "नानीजी", "नानी",
+    "माँ", "मां", "माताजी", "पापा", "पिताजी", "भाई", "बहन", "बच्चे", "आई", "बाबा", "काका", "काकी"
+]
+
+COMMON_MED_CONDITIONS = [
+    r"(?:bp|बीपी)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|dawaai|गोली|दवा|औषध)",
+    r"(?:sugar|शुगर)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|dawaai|गोली|दवा|औषध)",
+    r"(?:bukhar|ताप|fever)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|गोली|दवा|औषध)",
+    r"(?:dard|दर्द)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|गोली|दवा|औषध)",
+    r"(?:khansi|cough)\s*(?:ki|chi|की|ची)?\s*(?:dawa|syrup|दवा|सिरप)"
+]
 
 STOPWORDS = {
     "aaj", "kal", "parso", "abhi", "kripya", "please", "sirf", "mera", "meri",
@@ -269,11 +293,39 @@ T: "bhai ko 300 diye"
 
         # Detect language
         has_devanagari = bool(re.search(r"[\u0900-\u097F]", text_clean))
-        detected_lang = "hi" if has_devanagari else "hinglish"
-        if any(c in text_clean for c in ["ला", "दोनशे", "पाचशे", "घ्या", "द्या", "गोळी", "मिळाले", "कडून"]):
-            detected_lang = "mr"
         if lang_hint in ["hi", "mr", "en"]:
             detected_lang = lang_hint
+        elif "marathi" in text_lower or "मराठी" in text_clean:
+            detected_lang = "mr"
+        elif "hindi" in text_lower or "हिंदी" in text_clean:
+            detected_lang = "hi"
+        elif has_devanagari:
+            # Distinguish Devanagari Hindi vs Marathi
+            hi_score = 0
+            mr_score = 0
+            hi_markers = [
+                "की", "के", "का", "को", "ने", "से", "दवा", "दवाई", "दिलाओ", "बजे",
+                "याद", "रुपए", "रुपये", "उधार", "जमा", "हटाओ", "सुबह", "दोपहर", "शाम",
+                "दिन", "है", "था", "रहा", "सकते", "दीजिए", "दी", "गया"
+            ]
+            mr_markers = [
+                "च्या", "ची", "चे", "साठी", "औषध", "वाजता", "आठवण", "दोनशे", "पाचशे",
+                "मिळाले", "पाहिजे", "करा", "द्या", "घ्या", "झाले", "आहे", "नाही",
+                "दिवस", "सकाळी", "दुपारी", "रात्री", "गोळी", "हिशोब"
+            ]
+            for w in hi_markers:
+                if re.search(rf"\b{re.escape(w)}\b", text_clean) or w in text_clean:
+                    hi_score += 1
+            for w in mr_markers:
+                if re.search(rf"\b{re.escape(w)}\b", text_clean) or w in text_clean:
+                    mr_score += 1
+            detected_lang = "mr" if mr_score > hi_score else "hi"
+        else:
+            mr_latin = ["chi", "chya", "sathi", "vajta", "aathvan", "aushadh", "dupari", "sakali"]
+            if any(re.search(rf"\b{w}\b", text_lower) for w in mr_latin):
+                detected_lang = "mr"
+            else:
+                detected_lang = "hinglish"
 
         # 1. Emergency Safety Refusal
         if any(w in text_lower for w in ["chest", "dard", "saans", "bleeding", "behosh", "heart attack", "chhati"]):
@@ -376,7 +428,7 @@ T: "bhai ko 300 diye"
                 "confidence": 0.95
             }
 
-        if "yaad dilana" in text_lower or "snooze" in text_lower:
+        if "snooze" in text_lower or (re.search(r"[0-9]+\s*minute", text_lower) and "yaad" in text_lower):
             mins_match = re.search(r"([0-9]+)\s*minute", text_lower)
             mins = int(mins_match.group(1)) if mins_match else 10
             return {
@@ -387,7 +439,14 @@ T: "bhai ko 300 diye"
             }
 
         # 8. Parchi — Dynamic Medicine & Prescription Reminders (Devanagari & Latin)
-        parchi_triggers = ["dawa", "dawai", "dawaai", "goli", "medicine", "parchi", "दवा", "दवाई", "गोली", "पर्ची", "याद दिलाओ", "याद दिलाना"]
+        parchi_triggers = [
+            "dawa", "dawai", "dawaai", "goli", "medicine", "parchi", "prescription",
+            "दवा", "दवाई", "गोली", "पर्ची", "औषध", "गोळ्या", "याद दिलाओ", "याद दिलाना",
+            "याद दिला", "आठवण करा", "आठवण", "yaad dilao", "yaad dila", "yaad dilana",
+            "reminder", "syrup", "tablet", "capsule", "drops", "insulin",
+            "paracetamol", "crocin", "combiflam", "azithromycin", "amoxicillin", "aspirin", "cetirizine",
+            "पॅरासिटामॉल", "क्रोसिन", "इंसुलिन"
+        ]
         if any(w in text_lower or w in text_clean for w in parchi_triggers):
             return cls._parse_parchi_prescription(text_clean, detected_lang)
 
@@ -593,82 +652,120 @@ T: "bhai ko 300 diye"
     def _parse_parchi_prescription(cls, text: str, detected_lang: str) -> Dict[str, Any]:
         """
         Dynamically extracts verbatim patient, medicine name, and schedule for Parchi.
-        Eliminates all hardcoded patient and medicine defaults.
+        Eliminates all hardcoded patient and medicine defaults (Strict Zero Demo Data).
         """
         text_clean = text.strip()
+        text_lower = text_clean.lower()
 
         # 1. Dynamic Patient Label Extraction
         patient = None
-        # Pattern: "X ki dawa / X ke liye dawa / X ची गोळी / X की दवा"
-        pat_match = re.search(
-            r"([a-zA-Z\u0900-\u097F]+)\s*(?:ki|ke|ka|ke\s+liye|ची|च्या|की|के|का|साठी)\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)",
-            text_clean,
-            re.IGNORECASE
-        )
-        if pat_match:
-            cand = pat_match.group(1).strip()
-            if cand.lower() not in STOPWORDS:
-                patient = cand
-        else:
-            # Common family relations
-            fam_terms = [
-                "dadaji", "dada", "dadiji", "dadi", "nanaji", "nana", "naniji", "nani",
-                "maa", "mummy", "papa", "pitaji", "bhai", "behan", "bete", "bacche", "aai", "baba",
-                "दादाजी", "दादा", "दादीजी", "दादी", "नानाजी", "नाना", "नानी",
-                "माँ", "मां", "माताजी", "पापा", "पिताजी", "आई", "बाबा"
-            ]
-            for ft in fam_terms:
-                if re.search(rf"\b{re.escape(ft)}\b", text_clean, re.IGNORECASE) or ft in text_clean:
-                    patient = ft
-                    break
+        for ft in FAM_TERMS:
+            if re.search(rf"\b{re.escape(ft)}\b", text_clean, re.IGNORECASE) or (len(ft) > 2 and ft in text_clean):
+                patient = ft
+                break
 
         if not patient:
-            patient = "Maa"
-        else:
-            patient = patient.capitalize()
+            pat_match = re.search(
+                r"([a-zA-Z\u0900-\u097F]+)\s*(?:ki|ke|ka|ke\s+liye|ची|च्या|की|के|का|साठी)\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)",
+                text_clean,
+                re.IGNORECASE
+            )
+            if pat_match:
+                cand = pat_match.group(1).strip()
+                if cand.lower() not in STOPWORDS and cand.lower() not in ["bp", "sugar", "bukhar", "dard", "fever", "cough"]:
+                    patient = cand
+
+        if not patient:
+            pat_start = re.search(r"^([a-zA-Z\u0900-\u097F]+)\s*(?:ko|ke\s+liye|ला|साठी)\b", text_clean, re.IGNORECASE)
+            if pat_start:
+                cand = pat_start.group(1).strip()
+                if cand.lower() not in STOPWORDS:
+                    patient = cand
+
+        patient_formatted = patient.capitalize() if patient else None
 
         # 2. Dynamic Medicine Name Extraction
         med_name = None
-        # Match words after 'dawa / दवा' up to time or reminder keyword
-        med_match = re.search(
-            r"(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)\s+([a-zA-Z0-9\u0900-\u097F]+(?:\s+[a-zA-Z0-9\u0900-\u097F]+)?)",
-            text_clean,
-            re.IGNORECASE
-        )
-        if med_match:
-            candidate = med_match.group(1).strip()
-            # Clean off numbers, time words, or reminder words
-            candidate = re.sub(r"\s*(?:[0-9]|baje|बजे|yaad|dilao|याद|दिलाओ|subah|shaam|raat).*$", "", candidate, flags=re.IGNORECASE).strip()
-            if candidate and candidate.lower() not in ["yaad", "dilao", "lena", "dena", "ki", "ka"]:
-                med_name = candidate.capitalize()
+
+        for cond_pat in COMMON_MED_CONDITIONS:
+            cm = re.search(cond_pat, text_clean, re.IGNORECASE)
+            if cm:
+                med_name = cm.group(0).strip().capitalize()
+                break
 
         if not med_name:
-            # Check before 'dawa / दवा', e.g. "Paracetamol dawa"
+            med_match = re.search(
+                r"(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)\s+([a-zA-Z0-9\u0900-\u097F]+(?:\s+[a-zA-Z0-9\u0900-\u097F]+)?)",
+                text_clean,
+                re.IGNORECASE
+            )
+            if med_match:
+                cand = med_match.group(1).strip()
+                cand = re.sub(
+                    r"\s*(?:[0-9\u0966-\u096F]|baje|बजे|vajta|वाजता|din|days|दिन|दिवस|yaad|dilao|याद|दिलाओ|subah|shaam|raat|sakali|dupari|ratree|दुपारी|सकाळी|रात्री|संध्याकाळी).*$",
+                    "",
+                    cand,
+                    flags=re.IGNORECASE
+                ).strip()
+                if (
+                    cand
+                    and cand.lower() not in ["yaad", "dilao", "lena", "dena", "ki", "ka", "chi", "chya", "आठवण", "करा"]
+                    and not re.match(r"^[0-9\u0966-\u096F]+$", cand)
+                ):
+                    med_name = cand.capitalize()
+
+        if not med_name:
             pre_match = re.search(
-                r"([a-zA-Z0-9\u0900-\u097F]+)\s+(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली)",
+                r"([a-zA-Z0-9\u0900-\u097F]+)\s*(?:ki|ke|ka|chi|ची|की|के)?\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)",
                 text_clean,
                 re.IGNORECASE
             )
             if pre_match:
                 cand = pre_match.group(1).strip()
-                if cand.lower() not in ["ki", "ke", "ka", "ची", "च्या", "की", "के", "का"]:
+                if (
+                    cand.lower() not in STOPWORDS
+                    and not any(f.lower() in cand.lower() for f in FAM_TERMS)
+                    and (not patient or patient.lower() not in cand.lower())
+                ):
                     med_name = cand.capitalize()
 
         if not med_name:
-            med_name = "Dawa"
+            known_pharma = [
+                "paracetamol", "crocin", "combiflam", "azithromycin", "aspirin", "amoxicillin",
+                "cetirizine", "metformin", "pantocid", "digene", "vicks", "insulin", "पॅरासिटामॉल", "क्रोसिन"
+            ]
+            for kp in known_pharma:
+                if kp in text_lower or kp in text_clean:
+                    med_name = kp.capitalize()
+                    break
+
+        if not med_name:
+            med_name = "Dawa" if detected_lang != "mr" else "औषध"
 
         # 3. Dynamic Time & Schedule Extraction
         time_str = "08:00"
         times_of_day = ["morning"]
-        time_match = re.search(r"([0-9]{1,2}(?::[0-9]{2})?)\s*(?:baje|बजे)?", text_clean, re.IGNORECASE)
-        if time_match:
-            raw_t = time_match.group(1)
+
+        t_match = re.search(r"([0-9\u0966-\u096F]{1,2}(?::[0-9\u0966-\u096F]{2})?)\s*(?:baje|बजे|vajta|वाजता|am|pm)", text_clean, re.IGNORECASE)
+        if not t_match:
+            t_match = re.search(r"([0-9\u0966-\u096F]{1,2}:[0-9\u0966-\u096F]{2})", text_clean)
+
+        if t_match:
+            raw_t = normalize_devanagari_digits(t_match.group(1))
             if ":" in raw_t:
                 h, m = raw_t.split(":")
-                time_str = f"{int(h):02d}:{int(m):02d}"
+                hour = int(h)
+                minute = int(m)
             else:
-                time_str = f"{int(raw_t):02d}:00"
-            hour = int(time_str.split(":")[0])
+                hour = int(raw_t)
+                minute = 0
+
+            is_pm = bool(re.search(r"\bpm\b|shaam|raat|dupari|dopahar|दोपहर|शाम|रात|दुपारी|रात्री|संध्याकाळी", text_clean, re.IGNORECASE))
+            if is_pm and hour < 12:
+                hour += 12
+
+            time_str = f"{hour:02d}:{minute:02d}"
+
             if 5 <= hour < 12:
                 times_of_day = ["morning"]
             elif 12 <= hour < 17:
@@ -677,28 +774,35 @@ T: "bhai ko 300 diye"
                 times_of_day = ["evening"]
             else:
                 times_of_day = ["night"]
-        elif "teen baar" in text.lower() or "three times" in text.lower():
+        elif "teen baar" in text_lower or "three times" in text_lower or "तीन वेळा" in text_clean:
             times_of_day = ["morning", "afternoon", "night"]
-        elif "shaam" in text.lower() and "subah" not in text.lower():
+        elif ("shaam" in text_lower or "संध्याकाळी" in text_clean) and "subah" not in text_lower:
             times_of_day = ["evening"]
             time_str = "19:30"
-        elif "raat" in text.lower():
+        elif "raat" in text_lower or "रात्री" in text_clean:
             times_of_day = ["night"]
             time_str = "21:30"
+        elif "dupari" in text_lower or "दोपहर" in text_clean or "दुपारी" in text_clean:
+            times_of_day = ["afternoon"]
+            time_str = "13:30"
         else:
             times_of_day = ["morning", "evening"]
 
-        days_match = re.search(r"([0-9]+)\s*(?:din|days|दिवस)", text.lower())
-        days = int(days_match.group(1)) if days_match else 5
+        days_match = re.search(r"([0-9\u0966-\u096F]+)\s*(?:din|days|दिन|दिवस)", text_clean, re.IGNORECASE)
+        days = int(normalize_devanagari_digits(days_match.group(1))) if days_match else 5
 
-        with_food = "after" if ("baad" in text.lower() or "after" in text.lower()) else ("before" if "pehle" in text.lower() else None)
+        with_food = (
+            "after"
+            if ("baad" in text_lower or "after" in text_lower or "नंतर" in text_clean or "बाद" in text_clean)
+            else ("before" if ("pehle" in text_lower or "पूर्वी" in text_clean or "पहले" in text_clean) else None)
+        )
 
         return {
             "language": detected_lang,
             "actions": [{
                 "tool": "save_prescription",
                 "args": {
-                    "patient_label": patient,
+                    "patient_label": patient_formatted,
                     "medicines": [{
                         "name": med_name,
                         "dose_text": None,

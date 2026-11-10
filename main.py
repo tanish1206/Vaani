@@ -1,22 +1,23 @@
 """
-VAANI — Vercel & Production ASGI Entrypoint.
-Exports the FastAPI 'app' instance for Vercel Serverless Functions,
-uvicorn, gunicorn, and local development.
+VAANI — Root Entrypoint forwarding to Vaani backend.
 """
-
 import sys
 from pathlib import Path
 
-# Add backend directory to sys.path so 'app.*' imports resolve cleanly
-ROOT_DIR = Path(__file__).resolve().parent
-backend_dir = ROOT_DIR / "backend"
-if str(backend_dir) not in sys.path:
-    sys.path.insert(0, str(backend_dir))
+BASE_DIR = Path(__file__).resolve().parent
+vaani_dir = BASE_DIR / "Vaani"
 
-# Import the FastAPI application instance
+if (vaani_dir / "backend").exists():
+    if str(vaani_dir / "backend") not in sys.path:
+        sys.path.insert(0, str(vaani_dir / "backend"))
+    if str(vaani_dir) not in sys.path:
+        sys.path.insert(0, str(vaani_dir))
+elif (BASE_DIR / "backend").exists():
+    if str(BASE_DIR / "backend") not in sys.path:
+        sys.path.insert(0, str(BASE_DIR / "backend"))
+
 from app.main import app
 
-# For local direct running: python main.py
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
