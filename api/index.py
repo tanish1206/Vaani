@@ -16,3 +16,4 @@ if str(BASE_DIR) not in sys.path:
 
 # Import the configured FastAPI app instance
 from main import app
+
