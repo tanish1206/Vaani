@@ -57,9 +57,15 @@ class GnaniASRService:
         endpoint = GnaniConfig.get_asr_endpoint()
         model = GnaniConfig.get_stt_model()
 
-        data: Dict[str, str] = {"model": model}
+        # Official Gnani Prisma v3.0 parameters
+        data: Dict[str, str] = {
+            "model": model,
+            "format": "transcribe"
+        }
         if language_code and language_code != "auto":
             data["language_code"] = language_code
+        else:
+            data["language_code"] = "indic-auto"
 
         # Determine MIME type
         content_type = "audio/webm"
@@ -73,19 +79,29 @@ class GnaniASRService:
         files = {"audio_file": (filename, audio_bytes, content_type)}
 
         try:
-            async with httpx.AsyncClient(timeout=12.0) as client:
+            async with httpx.AsyncClient(timeout=14.0) as client:
                 resp = await client.post(endpoint, headers=headers, data=data, files=files)
 
                 if resp.status_code == 200:
                     payload = resp.json()
                     transcript = payload.get("transcript", "").strip()
-                    lang = payload.get("language_code", language_code or "hi-IN")
+                    lang = (
+                        payload.get("detected_language_code")
+                        or payload.get("language_code")
+                        or (language_code if language_code != "auto" else "hi-IN")
+                    )
                     confidence = float(payload.get("confidence", 0.95))
+                    request_id = payload.get("request_id", "")
+                    latency = payload.get("end_to_end_latency") or payload.get("processing_time")
                     return {
                         "success": True,
                         "transcript": transcript,
                         "language_code": lang,
+                        "detected_language_code": lang,
                         "confidence": confidence,
+                        "request_id": request_id,
+                        "latency": latency,
+                        "model": payload.get("model", model),
                         "provider": "gnani-prisma-v3.0"
                     }
                 elif resp.status_code == 401:

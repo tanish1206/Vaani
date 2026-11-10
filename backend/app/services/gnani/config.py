@@ -25,10 +25,22 @@ class GnaniConfig:
         return f"{settings.GNANI_BASE_URL.rstrip('/')}/stt/v3"
 
     @classmethod
+    def get_ws_asr_endpoint(cls) -> str:
+        if hasattr(settings, "GNANI_WS_ASR_ENDPOINT") and settings.GNANI_WS_ASR_ENDPOINT:
+            return settings.GNANI_WS_ASR_ENDPOINT
+        return "wss://api.vachana.ai/stt/v3/stream"
+
+    @classmethod
     def get_tts_endpoint(cls) -> str:
         if hasattr(settings, "GNANI_TTS_ENDPOINT") and settings.GNANI_TTS_ENDPOINT:
             return settings.GNANI_TTS_ENDPOINT
         return f"{settings.GNANI_BASE_URL.rstrip('/')}/api/v1/tts/inference"
+
+    @classmethod
+    def get_tts_sse_endpoint(cls) -> str:
+        if hasattr(settings, "GNANI_TTS_SSE_ENDPOINT") and settings.GNANI_TTS_SSE_ENDPOINT:
+            return settings.GNANI_TTS_SSE_ENDPOINT
+        return f"{settings.GNANI_BASE_URL.rstrip('/')}/api/v1/tts/sse"
 
     @classmethod
     def get_voice_list_endpoint(cls) -> str:
@@ -38,15 +50,19 @@ class GnaniConfig:
 
     @classmethod
     def get_stt_model(cls) -> str:
-        return getattr(settings, "STT_MODEL", "prisma-v3.0")
+        return getattr(settings, "GNANI_STT_MODEL", getattr(settings, "STT_MODEL", "prisma-v3.0"))
 
     @classmethod
     def get_tts_model(cls) -> str:
-        return getattr(settings, "TTS_MODEL", "timbre-v2.5")
+        return getattr(settings, "GNANI_TTS_MODEL", getattr(settings, "TTS_MODEL", "timbre-v3.0"))
 
     @classmethod
     def get_default_voice_id(cls) -> str:
-        return getattr(settings, "GNANI_DEFAULT_VOICE_ID", "Bhavna")
+        return getattr(settings, "GNANI_DEFAULT_VOICE", getattr(settings, "GNANI_DEFAULT_VOICE_ID", "Shivani"))
+
+    @classmethod
+    def get_default_language(cls) -> str:
+        return getattr(settings, "GNANI_DEFAULT_LANGUAGE", "auto")
 
     @classmethod
     def get_auth_headers(cls) -> Dict[str, str]:

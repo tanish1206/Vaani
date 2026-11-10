@@ -46,21 +46,27 @@ class Settings(BaseSettings):
     GNANI_API_KEY: str = ""
     GNANI_BASE_URL: str = "https://api.vachana.ai"
     GNANI_ASR_ENDPOINT: str = "https://api.vachana.ai/stt/v3"
+    GNANI_WS_ASR_ENDPOINT: str = "wss://api.vachana.ai/stt/v3/stream"
     GNANI_TTS_ENDPOINT: str = "https://api.vachana.ai/api/v1/tts/inference"
+    GNANI_TTS_SSE_ENDPOINT: str = "https://api.vachana.ai/api/v1/tts/sse"
+    GNANI_STT_MODEL: str = "prisma-v3.0"
+    GNANI_TTS_MODEL: str = "timbre-v3.0"
+    GNANI_DEFAULT_VOICE: str = "Shivani"
+    GNANI_DEFAULT_LANGUAGE: str = "auto"
     GNANI_VOICE_LIST_ENDPOINT: str = ""
-    GNANI_DEFAULT_VOICE_ID: str = "sia"
+    GNANI_DEFAULT_VOICE_ID: str = "Shivani"
     GNANI_MODEL: str = "prisma-v3.0"
     
     # STT (Prisma v3.0)
     STT_MODEL: str = "prisma-v3.0"
     STT_DEFAULT_LANGUAGE: str = "hi-IN"
     
-    # TTS (Timbre v2.5)
-    TTS_MODEL: str = "timbre-v2.5"
-    TTS_VOICE_HI: str = "sia"
-    TTS_VOICE_MR: str = "madhuri"
-    TTS_VOICE_EN: str = "radhika"
-    TTS_SAMPLE_RATE: int = 44100
+    # TTS (Timbre v3.0 Flagship / v2.5 Supported)
+    TTS_MODEL: str = "timbre-v3.0"
+    TTS_VOICE_HI: str = "Shivani"
+    TTS_VOICE_MR: str = "Shivani"
+    TTS_VOICE_EN: str = "Shivani"
+    TTS_SAMPLE_RATE: int = 48000
     
     # Evon LLM (Reasoning & Intent Extraction)
     EVON_ENABLED: bool = True
