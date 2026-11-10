@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "VAANI"
     TAGLINE: str = "Boliye. Vaani Sambhal Legi."
     VERSION: str = "2.0.0"
-    DEBUG: Union[bool, str] = True
-    DEMO_MODE: Union[bool, str] = True
+    DEBUG: Union[bool, str] = False
+    DEMO_MODE: Union[bool, str] = False
     
     @field_validator("DEBUG", mode="before")
     def parse_debug(cls, v):
@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     # Gnani Services (External Sovereign Indian AI)
     GNANI_API_KEY: str = ""
     GNANI_BASE_URL: str = "https://api.vachana.ai"
+    GNANI_ASR_ENDPOINT: str = "https://api.vachana.ai/stt/v3"
+    GNANI_TTS_ENDPOINT: str = "https://api.vachana.ai/api/v1/tts/inference"
+    GNANI_VOICE_LIST_ENDPOINT: str = ""
+    GNANI_DEFAULT_VOICE_ID: str = "sia"
+    GNANI_MODEL: str = "prisma-v3.0"
     
     # STT (Prisma v3.0)
     STT_MODEL: str = "prisma-v3.0"
@@ -52,9 +57,9 @@ class Settings(BaseSettings):
     
     # TTS (Timbre v2.5)
     TTS_MODEL: str = "timbre-v2.5"
-    TTS_VOICE_HI: str = "Bhavna"
-    TTS_VOICE_MR: str = "Madhuri"
-    TTS_VOICE_EN: str = "Radhika"
+    TTS_VOICE_HI: str = "sia"
+    TTS_VOICE_MR: str = "madhuri"
+    TTS_VOICE_EN: str = "radhika"
     TTS_SAMPLE_RATE: int = 44100
     
     # Evon LLM (Reasoning & Intent Extraction)
