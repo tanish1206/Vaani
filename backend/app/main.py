@@ -99,16 +99,23 @@ async def health_check():
 
 from app.config import settings, BASE_DIR
 
-# Path to frontend
-FRONTEND_DIR = BASE_DIR / "frontend"
-if not FRONTEND_DIR.exists():
-    FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
+# Path to frontend resolution (supports local, nested repo, and Vercel Lambda /var/task)
+candidates = [
+    BASE_DIR / "frontend",
+    Path(__file__).resolve().parent.parent.parent / "frontend",
+    Path(__file__).resolve().parent.parent / "frontend",
+    Path.cwd() / "frontend"
+]
+FRONTEND_DIR = next((p for p in candidates if p.exists()), candidates[0])
 APP_PAGES_DIR = FRONTEND_DIR / "app"
 
 def serve_html_file(file_path: Path):
-    if file_path.exists():
-        return HTMLResponse(content=file_path.read_text(encoding="utf-8"))
-    return JSONResponse(status_code=404, content={"error": f"Page not found: {file_path.name}"})
+    try:
+        if file_path.exists():
+            return HTMLResponse(content=file_path.read_text(encoding="utf-8"))
+        return JSONResponse(status_code=404, content={"error": f"Page not found: {file_path.name}"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to read file", "detail": str(e)})
 
 # Landing Page Route
 @app.get("/")

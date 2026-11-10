@@ -11,10 +11,10 @@ import tempfile
 from typing import Generator
 from contextlib import contextmanager
 
-from app.config import settings, BASE_DIR
+from app.config import settings, BASE_DIR, is_serverless
 
 raw_db_path = Path(settings.DB_PATH)
-if os.environ.get("VERCEL"):
+if is_serverless():
     raw_db_path = Path(tempfile.gettempdir()) / "vaani.db"
 
 DB_FILE = raw_db_path if raw_db_path.is_absolute() else (BASE_DIR / raw_db_path)
@@ -28,7 +28,7 @@ def get_connection() -> sqlite3.Connection:
         pass
 
     # Copy bundled database to temp directory if running on Vercel and not present
-    if os.environ.get("VERCEL") and not DB_FILE.exists():
+    if is_serverless() and not DB_FILE.exists():
         bundled_db = BASE_DIR / "data" / "vaani.db"
         if bundled_db.exists():
             try:
@@ -37,19 +37,9 @@ def get_connection() -> sqlite3.Connection:
             except Exception as e:
                 print(f"[DB Setup Warning] Could not copy bundled DB: {e}")
 
-    conn = sqlite3.connect(str(DB_FILE), check_same_thread=False, timeout=10.0)
+    conn = sqlite3.connect(str(DB_FILE), check_same_thread=False, timeout=15.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
-    if os.environ.get("VERCEL"):
-        try:
-            conn.execute("PRAGMA journal_mode = DELETE;")
-        except Exception:
-            conn.execute("PRAGMA journal_mode = MEMORY;")
-    else:
-        try:
-            conn.execute("PRAGMA journal_mode = WAL;")
-        except Exception:
-            conn.execute("PRAGMA journal_mode = DELETE;")
     return conn
 
 @contextmanager
@@ -69,6 +59,17 @@ def init_db():
     """Initialize database tables from schema.sql if needed (fail-safe for serverless)."""
     try:
         with get_db() as conn:
+            if is_serverless():
+                try:
+                    conn.execute("PRAGMA journal_mode = DELETE;")
+                except Exception:
+                    pass
+            else:
+                try:
+                    conn.execute("PRAGMA journal_mode = WAL;")
+                except Exception:
+                    pass
+
             if SCHEMA_FILE.exists():
                 with open(SCHEMA_FILE, "r", encoding="utf-8") as f:
                     conn.executescript(f.read())

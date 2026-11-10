@@ -12,7 +12,12 @@ Browser (Client) <--- WebSocket ---> VAANI FastAPI Backend <--- WebSocket ---> G
 import asyncio
 import json
 from typing import Optional, Dict, Any
-import websockets
+try:
+    import websockets
+    from websockets.exceptions import InvalidStatusCode
+except ImportError:
+    websockets = None
+    InvalidStatusCode = Exception
 from fastapi import WebSocket, WebSocketDisconnect
 
 from app.services.gnani.config import GnaniConfig
@@ -31,6 +36,14 @@ class GnaniStreamingRelay:
         piping transcript events back to the client.
         """
         await client_ws.accept()
+
+        if websockets is None:
+            await client_ws.send_text(json.dumps({
+                "type": "error",
+                "message": "Real-time WebSocket streaming relay is unavailable (websockets library not loaded)."
+            }))
+            await client_ws.close()
+            return
 
         if not GnaniConfig.is_configured():
             await client_ws.send_json({

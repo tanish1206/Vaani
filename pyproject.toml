@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings>=2.2.0",
     "python-multipart>=0.0.9",
     "rapidfuzz>=3.6.0",
+    "websockets>=12.0",
+    "yfinance>=0.2.36",
     "av>=11.0.0"
 ]
-

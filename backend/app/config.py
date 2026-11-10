@@ -14,6 +14,15 @@ import tempfile
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+def is_serverless() -> bool:
+    """Detect if running inside Vercel or AWS Lambda serverless function."""
+    return bool(
+        os.environ.get("VERCEL")
+        or os.environ.get("VERCEL_ENV")
+        or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+        or os.environ.get("LAMBDA_TASK_ROOT")
+    )
+
 def mask_credential(val: Optional[str]) -> str:
     """Safely mask API key or secret for public display in settings/health."""
     if not val or not val.strip():
@@ -43,7 +52,7 @@ class Settings(BaseSettings):
         return bool(v)
     
     # Database Path (On Vercel / serverless, use writable temp directory)
-    DB_PATH: str = str(Path(tempfile.gettempdir()) / "vaani.db") if os.environ.get("VERCEL") else str(BASE_DIR / "data" / "vaani.db")
+    DB_PATH: str = str(Path(tempfile.gettempdir()) / "vaani.db") if is_serverless() else str(BASE_DIR / "data" / "vaani.db")
     
     # Gnani Services (External Sovereign Indian AI)
     GNANI_API_KEY: str = ""
