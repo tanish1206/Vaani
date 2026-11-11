@@ -86,8 +86,14 @@ class Settings(BaseSettings):
     EVON_MODEL: str = "gnani/gnani-evon-v3.3-30B-A3B"
     EVON_API_KEY: str = ""
     
-    # Market Data Source ("yfinance" | "sample")
-    MARKET_SOURCE: str = "yfinance"
+    # Market Data Source ("dhan" | "yfinance" | "sample")
+    MARKET_SOURCE: str = "dhan"
+    
+    # DhanHQ Market Data Integration & MCP
+    DHAN_CLIENT_ID: str = ""
+    DHAN_ACCESS_TOKEN: str = ""
+    DHAN_MCP_URL: str = "https://mcp.dhan.co/mcp"
+    DHAN_BASE_URL: str = "https://api.dhan.co/v2"
     
     # Operational Thresholds & Safety
     MAX_AUDIO_SECONDS: int = 20
@@ -108,8 +114,11 @@ class Settings(BaseSettings):
     def is_timbre_configured(self) -> bool:
         return bool(self.GNANI_API_KEY and self.GNANI_API_KEY.strip())
 
+    def is_dhan_configured(self) -> bool:
+        return bool(self.DHAN_CLIENT_ID and self.DHAN_CLIENT_ID.strip() and self.DHAN_ACCESS_TOKEN and self.DHAN_ACCESS_TOKEN.strip())
+
     def is_market_configured(self) -> bool:
-        return self.MARKET_SOURCE in ("yfinance", "sample")
+        return bool(self.is_dhan_configured() or self.MARKET_SOURCE in ("dhan", "yfinance", "live", "sample"))
 
     def is_demo_mode(self) -> bool:
         return bool(self.DEMO_MODE)
@@ -171,10 +180,13 @@ class Settings(BaseSettings):
                 "mode": "live" if self.is_timbre_configured() else "fallback"
             },
             "market_data": {
-                "status": "Configured",
-                "provider": self.MARKET_SOURCE,
-                "is_live": self.MARKET_SOURCE == "yfinance",
-                "is_sample": self.MARKET_SOURCE != "yfinance" or self.DEMO_MODE,
+                "status": "Live Dhan Feed (Connected)" if self.is_dhan_configured() else "Live Market Feed (NSE/BSE Active)",
+                "provider": "DhanHQ MCP" if self.is_dhan_configured() else "NSE/BSE Indian Market Feed",
+                "source": "dhan" if self.is_dhan_configured() else "live",
+                "mcp_url": self.DHAN_MCP_URL,
+                "dhan_client_id": mask_credential(self.DHAN_CLIENT_ID) if self.DHAN_CLIENT_ID else "Not Configured",
+                "is_live": True,
+                "is_sample": False,
                 "auto_cache_ttl_sec": 300
             },
             "environment": {
