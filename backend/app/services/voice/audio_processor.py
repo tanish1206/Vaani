@@ -8,9 +8,12 @@ STRICT PRIVACY: Never persists raw user microphone recordings to disk.
 """
 
 from typing import Tuple
-import io
-import wave
 import base64
+import io
+import logging
+import wave
+
+logger = logging.getLogger(__name__)
 
 try:
     import av
@@ -100,8 +103,8 @@ class AudioProcessor:
                 wav_bytes = output_buf.getvalue()
                 if len(wav_bytes) > 44:  # Valid WAV header is 44 bytes
                     return wav_bytes, "turn.wav", "audio/wav"
-            except Exception as e:
-                print(f"[AudioProcessor] Transcoding failed: {e}. Attempting fallback.")
+            except Exception as exc:
+                logger.warning("Audio transcoding failed (%s). Attempting passthrough fallback.", exc)
 
         # Fallback: if already a recognized gnani format, pass through with proper MIME
         ext = filename.split(".")[-1].lower() if "." in filename else "wav"

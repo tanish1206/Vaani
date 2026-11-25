@@ -7,6 +7,15 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   class ParchiWorkspace {
     constructor() {
       this.initDOMElements();
@@ -79,17 +88,71 @@
         this.formPresc.reset();
         await window.vaaniAgents['parchi-agent-container'].processQuery(query);
       });
+
+      if (this.timelineList) {
+        this.timelineList.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-parchi-action]');
+          if (!btn) return;
+          const action = btn.getAttribute('data-parchi-action');
+          if (action === 'done') this.markDone();
+          else if (action === 'snooze') this.snooze(10);
+        });
+      }
     }
 
     async loadDosesData() {
       try {
         const resp = await fetch('/api/v1/parchi/doses');
         const data = await resp.json();
-
-        this.renderTimeline(data.doses || []);
+        const doses = data.doses || [];
+        this.renderTimeline(doses);
+        this.renderActivePrescriptions(doses);
       } catch (err) {
         console.error('Error loading doses:', err);
       }
+    }
+
+    renderActivePrescriptions(doses) {
+      if (!this.prescriptionsList) return;
+      if (doses.length === 0) {
+        this.prescriptionsList.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+            Koi active prescription nahi hai.
+          </div>
+        `;
+        return;
+      }
+
+      const grouped = new Map();
+      doses.forEach(d => {
+        const key = `${d.patient_label || 'Self'}::${d.name}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            patient: d.patient_label || 'Self',
+            medicine: d.name,
+            withFood: d.with_food,
+            durationDays: d.duration_days || 5,
+            doseText: d.dose_text,
+            slots: []
+          });
+        }
+        const t = d.due_at && d.due_at.includes('T') ? d.due_at.split('T')[1].substring(0, 5) : '08:00';
+        grouped.get(key).slots.push(t);
+      });
+
+      this.prescriptionsList.innerHTML = Array.from(grouped.values()).map(item => `
+        <div style="background: var(--ice-50); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: var(--aubergine); font-size: 14.5px;">${escapeHtml(item.patient)}</span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--marigold-600); background: var(--marigold-100); padding: 2px 8px; border-radius: var(--radius-pill);">${Number(item.durationDays)} Days</span>
+          </div>
+          <div style="font-weight: 600; color: var(--aubergine); margin-bottom: 4px;">${escapeHtml(item.medicine)}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">
+            ⏰ ${escapeHtml(item.slots.join(', '))} ${item.withFood ? `• ${escapeHtml(item.withFood)} food` : ''}
+            ${item.doseText ? `• ${escapeHtml(item.doseText)}` : ''}
+          </div>
+        </div>
+      `).join('');
     }
 
     renderTimeline(doses) {
@@ -109,30 +172,29 @@
       this.timelineList.innerHTML = doses.map(d => {
         const isDone = d.status === 'done';
         const isPending = d.status === 'pending';
-        const timeStr = d.due_at ? d.due_at.split('T')[1].substring(0, 5) : '08:00';
-
-        const foodTag = d.with_food ? `&bull; ${d.with_food} food` : '';
+        const timeStr = (d.due_at && d.due_at.includes('T')) ? d.due_at.split('T')[1].substring(0, 5) : '08:00';
+        const foodTag = d.with_food ? `&bull; ${escapeHtml(d.with_food)} food` : '';
 
         return `
           <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px; border-left: 4px solid ${isDone ? 'var(--success)' : 'var(--marigold)'};">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: 700; color: var(--aubergine); font-size: 15px;">${d.patient_label}: ${d.name}</span>
+                <span style="font-weight: 700; color: var(--aubergine); font-size: 15px;">${escapeHtml(d.patient_label)}: ${escapeHtml(d.name)}</span>
                 <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${isDone ? 'var(--success)' : 'var(--aubergine)'}; background: ${isDone ? 'rgba(46,125,50,0.1)' : 'var(--marigold-100)'}; padding: 2px 8px; border-radius: var(--radius-pill);">
-                  ${d.status}
+                  ${escapeHtml(d.status)}
                 </span>
               </div>
               <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
-                ⏰ Samay: <strong>${timeStr}</strong> ${foodTag} ${d.dose_text ? '&bull; ' + d.dose_text : ''}
+                ⏰ Samay: <strong>${escapeHtml(timeStr)}</strong> ${foodTag} ${d.dose_text ? '&bull; ' + escapeHtml(d.dose_text) : ''}
               </div>
             </div>
 
             <div style="display: flex; gap: 8px;">
               ${isPending ? `
-                <button class="utility-chip-btn" style="background: var(--aubergine); color: #FFFFFF;" onclick="window.parchiWorkspace.markDone()">
+                <button class="utility-chip-btn" type="button" data-parchi-action="done" style="background: var(--aubergine); color: #FFFFFF;">
                   ✓ De Di
                 </button>
-                <button class="utility-chip-btn" onclick="window.parchiWorkspace.snooze(10)">
+                <button class="utility-chip-btn" type="button" data-parchi-action="snooze">
                   ⏰ 10m Snooze
                 </button>
               ` : `

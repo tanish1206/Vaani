@@ -6,7 +6,7 @@ service readiness diagnostics safely.
 
 from typing import Union, Dict, Any, Optional
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 
 import os
@@ -33,27 +33,38 @@ def mask_credential(val: Optional[str]) -> str:
     return f"{v[:4]}****{v[-4:]}"
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=str(BASE_DIR / ".env"),
+        extra="ignore",
+    )
+
     APP_NAME: str = "VAANI"
     TAGLINE: str = "Boliye. Vaani Sambhal Legi."
     VERSION: str = "2.0.0"
     DEBUG: Union[bool, str] = False
     DEMO_MODE: Union[bool, str] = False
-    
+
     @field_validator("DEBUG", mode="before")
+    @classmethod
     def parse_debug(cls, v):
         if isinstance(v, str):
             return v.lower() in ("true", "1", "t", "yes", "y", "debug")
         return bool(v)
 
     @field_validator("DEMO_MODE", mode="before")
+    @classmethod
     def parse_demo(cls, v):
         if isinstance(v, str):
             return v.lower() in ("true", "1", "t", "yes", "y", "demo")
         return bool(v)
-    
+
     # Database Path (On Vercel / serverless, use writable temp directory)
-    DB_PATH: str = str(Path(tempfile.gettempdir()) / "vaani.db") if is_serverless() else str(BASE_DIR / "data" / "vaani.db")
-    
+    DB_PATH: str = (
+        str(Path(tempfile.gettempdir()) / "vaani.db")
+        if is_serverless()
+        else str(BASE_DIR / "data" / "vaani.db")
+    )
+
     # Gnani Services (External Sovereign Indian AI)
     GNANI_API_KEY: str = ""
     GNANI_BASE_URL: str = "https://api.vachana.ai"
@@ -68,60 +79,67 @@ class Settings(BaseSettings):
     GNANI_VOICE_LIST_ENDPOINT: str = ""
     GNANI_DEFAULT_VOICE_ID: str = "Shivani"
     GNANI_MODEL: str = "prisma-v3.0"
-    
+
     # STT (Prisma v3.0)
     STT_MODEL: str = "prisma-v3.0"
     STT_DEFAULT_LANGUAGE: str = "hi-IN"
-    
+
     # TTS (Timbre v3.0 Flagship / v2.5 Supported)
     TTS_MODEL: str = "timbre-v3.0"
     TTS_VOICE_HI: str = "Shivani"
     TTS_VOICE_MR: str = "Shivani"
     TTS_VOICE_EN: str = "Shivani"
     TTS_SAMPLE_RATE: int = 48000
-    
+
     # Evon LLM (Reasoning & Intent Extraction)
     EVON_ENABLED: bool = True
     EVON_BASE_URL: str = "http://localhost:8001"
     EVON_MODEL: str = "gnani/gnani-evon-v3.3-30B-A3B"
     EVON_API_KEY: str = ""
-    
-    # Market Data Source ("yfinance" | "sample")
-    MARKET_SOURCE: str = "yfinance"
+
     # Market Data Source ("dhan" | "yfinance" | "sample")
-    MARKET_SOURCE: str = "dhan"
-    
+    MARKET_SOURCE: str = "yfinance"
+
     # DhanHQ Market Data Integration & MCP
     DHAN_CLIENT_ID: str = ""
     DHAN_ACCESS_TOKEN: str = ""
     DHAN_MCP_URL: str = "https://mcp.dhan.co/mcp"
     DHAN_BASE_URL: str = "https://api.dhan.co/v2"
-    
+
     # Operational Thresholds & Safety
     MAX_AUDIO_SECONDS: int = 20
     CONFIRM_AMOUNT_RUPEES: int = 5000
     AUDIO_TTL_MIN: int = 30
     CORS_ORIGINS: str = "http://localhost:8000,http://127.0.0.1:8000"
 
-    class Config:
-        env_file = str(BASE_DIR / ".env")
-        extra = "ignore"
-
     def is_prisma_configured(self) -> bool:
         return bool(self.GNANI_API_KEY and self.GNANI_API_KEY.strip())
 
     def is_evon_configured(self) -> bool:
-        return bool(self.EVON_ENABLED and self.EVON_BASE_URL and self.EVON_BASE_URL.strip() and self.EVON_API_KEY and self.EVON_API_KEY.strip())
+        return bool(
+            self.EVON_ENABLED
+            and self.EVON_BASE_URL
+            and self.EVON_BASE_URL.strip()
+            and self.EVON_API_KEY
+            and self.EVON_API_KEY.strip()
+        )
 
     def is_timbre_configured(self) -> bool:
         return bool(self.GNANI_API_KEY and self.GNANI_API_KEY.strip())
 
     def is_dhan_configured(self) -> bool:
-        return bool(self.DHAN_CLIENT_ID and self.DHAN_CLIENT_ID.strip() and self.DHAN_ACCESS_TOKEN and self.DHAN_ACCESS_TOKEN.strip())
+        return bool(
+            self.DHAN_CLIENT_ID
+            and self.DHAN_CLIENT_ID.strip()
+            and self.DHAN_ACCESS_TOKEN
+            and self.DHAN_ACCESS_TOKEN.strip()
+        )
 
     def is_market_configured(self) -> bool:
-        return self.MARKET_SOURCE in ("yfinance", "sample")
-        return bool(self.is_dhan_configured() or self.MARKET_SOURCE in ("dhan", "yfinance", "live", "sample"))
+        return bool(
+            self.is_dhan_configured()
+            or self.MARKET_SOURCE in ("dhan", "yfinance", "live", "sample")
+        )
 
     def is_demo_mode(self) -> bool:
         return bool(self.DEMO_MODE)
@@ -151,56 +169,70 @@ class Settings(BaseSettings):
         Return safe status for all external service integrations.
         Never reveals secret API keys.
         """
-        readiness = {
+        prisma_ok = self.is_prisma_configured()
+        evon_ok = self.is_evon_configured()
+        timbre_ok = self.is_timbre_configured()
+        dhan_ok = self.is_dhan_configured()
+        market_live = dhan_ok or (self.MARKET_SOURCE == "yfinance" and not self.is_demo_mode())
+
+        readiness: Dict[str, Any] = {
             "unified_api_key_masked": mask_credential(self.GNANI_API_KEY),
             "prisma": {
-                "status": "Live Cloud (Active)" if self.is_prisma_configured() else "Missing",
+                "status": "Live Cloud (Active)" if prisma_ok else "Missing",
                 "endpoint": f"{self.GNANI_BASE_URL.rstrip('/')}/stt/v3",
                 "model": self.STT_MODEL,
                 "api_key_masked": mask_credential(self.GNANI_API_KEY),
-                "is_active": self.is_prisma_configured(),
-                "configured": self.is_prisma_configured(),
-                "mode": "live" if self.is_prisma_configured() else "fallback"
+                "is_active": prisma_ok,
+                "configured": prisma_ok,
+                "mode": "live" if prisma_ok else "fallback",
             },
             "evon": {
-                "status": "Live Evon v3.3" if self.is_evon_configured() else "Deterministic Rules Engine (Active)",
-                "endpoint": f"{self.EVON_BASE_URL.rstrip('/')}/v1/chat/completions" if self.is_evon_configured() else "Internal Deterministic Parser",
-                "model": self.EVON_MODEL if self.is_evon_configured() else "Deterministic Multilingual Rules Engine (100% Benchmark Verified)",
+                "status": "Live Evon v3.3" if evon_ok else "Deterministic Rules Engine (Active)",
+                "endpoint": (
+                    f"{self.EVON_BASE_URL.rstrip('/')}/v1/chat/completions"
+                    if evon_ok
+                    else "Internal Deterministic Parser"
+                ),
+                "model": (
+                    self.EVON_MODEL
+                    if evon_ok
+                    else "Deterministic Multilingual Rules Engine (100% Benchmark Verified)"
+                ),
                 "fallback_parser": "Deterministic Multilingual Rules Parser (Active)",
                 "is_active": True,
                 "configured": True,
-                "mode": "live" if self.is_evon_configured() else "deterministic-rules"
+                "mode": "live" if evon_ok else "deterministic-rules",
             },
             "timbre": {
-                "status": "Live Cloud (Active)" if self.is_timbre_configured() else "Missing",
+                "status": "Live Cloud (Active)" if timbre_ok else "Missing",
                 "endpoint": f"{self.GNANI_BASE_URL.rstrip('/')}/api/v1/tts/inference",
                 "model": self.TTS_MODEL,
                 "default_voice": self.TTS_VOICE_HI,
                 "fallback_engine": "Browser Web Speech API (Active)",
                 "api_key_masked": mask_credential(self.GNANI_API_KEY),
-                "is_active": self.is_timbre_configured(),
-                "configured": self.is_timbre_configured(),
-                "mode": "live" if self.is_timbre_configured() else "fallback"
+                "is_active": timbre_ok,
+                "configured": timbre_ok,
+                "mode": "live" if timbre_ok else "fallback",
             },
             "market_data": {
-                "status": "Configured",
-                "provider": self.MARKET_SOURCE,
-                "is_live": self.MARKET_SOURCE == "yfinance",
-                "is_sample": self.MARKET_SOURCE != "yfinance" or self.DEMO_MODE,
-                "status": "Live Dhan Feed (Connected)" if self.is_dhan_configured() else "Live Market Feed (NSE/BSE Active)",
-                "provider": "DhanHQ MCP" if self.is_dhan_configured() else "NSE/BSE Indian Market Feed",
-                "source": "dhan" if self.is_dhan_configured() else "live",
+                "status": (
+                    "Live Dhan Feed (Connected)"
+                    if dhan_ok
+                    else ("Live Market Feed (NSE/BSE Active)" if market_live else "Sample / Cached Mode")
+                ),
+                "provider": "DhanHQ MCP" if dhan_ok else self.MARKET_SOURCE,
+                "source": "dhan" if dhan_ok else self.MARKET_SOURCE,
                 "mcp_url": self.DHAN_MCP_URL,
                 "dhan_client_id": mask_credential(self.DHAN_CLIENT_ID) if self.DHAN_CLIENT_ID else "Not Configured",
-                "is_live": True,
-                "is_sample": False,
-                "auto_cache_ttl_sec": 300
+                "is_live": market_live,
+                "is_sample": not market_live,
+                "auto_cache_ttl_sec": 300,
             },
             "environment": {
-                "demo_mode": bool(self.DEMO_MODE),
+                "demo_mode": self.is_demo_mode(),
                 "debug": bool(self.DEBUG),
-                "database_path": self.DB_PATH
-            }
+                "database_path": self.DB_PATH,
+            },
         }
         readiness["stt"] = readiness["prisma"]
         readiness["intent_understanding"] = readiness["evon"]

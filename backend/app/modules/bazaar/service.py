@@ -5,12 +5,16 @@ caches market quotes in SQLite, and generates plain-language spoken briefings
 with honest freshness labeling (live / cached / sample / unavailable).
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+import logging
+import socket
 import sqlite3
+from typing import Any, Dict, List, Optional
 
 from app.config import settings
 from app.db.session import get_db
+
+logger = logging.getLogger(__name__)
 
 # Symbol mapping for standard Indian market indices and bluechips
 DEFAULT_WATCHLIST = [
@@ -21,14 +25,15 @@ DEFAULT_WATCHLIST = [
     ("HDFCBANK.NS", "HDFC Bank", 5),
 ]
 
+
 class BazaarService:
     @classmethod
-    def refresh_quotes_if_needed(cls, conn: sqlite3.Connection):
+    def refresh_quotes_if_needed(cls, conn: sqlite3.Connection) -> None:
         """
         Check market cache freshness. If older than 5 minutes and provider is yfinance,
-        attempt live update. In demo mode or if offline, uses cached sample fixtures immediately.
+        attempt live update. In demo mode or if offline, uses cached fixtures immediately.
         """
-        if settings.MARKET_SOURCE != "yfinance" or settings.DEMO_MODE:
+        if settings.MARKET_SOURCE != "yfinance" or settings.is_demo_mode():
             return
 
         cur = conn.cursor()
@@ -36,29 +41,21 @@ class BazaarService:
         latest_str = cur.fetchone()[0]
 
         now = datetime.now(timezone.utc)
-        needs_refresh = True
         if latest_str:
             try:
                 latest_dt = datetime.fromisoformat(latest_str.replace("Z", "+00:00"))
                 if (now - latest_dt) < timedelta(minutes=5):
-                    needs_refresh = False
-            except Exception:
-                needs_refresh = True
+                    return
+            except ValueError:
+                pass
 
-        if not needs_refresh:
-            return
-
-        # Attempt yfinance live fetch with short socket timeout to prevent hang if offline
-        import socket
         prev_timeout = socket.getdefaulttimeout()
         try:
             socket.setdefaulttimeout(2.0)
             import yfinance as yf
+
             cur.execute("SELECT symbol FROM watchlist;")
             symbols = [r["symbol"] for r in cur.fetchall()]
-            if not symbols:
-                return
-
             for sym in symbols:
                 try:
                     ticker = yf.Ticker(sym)
@@ -66,9 +63,13 @@ class BazaarService:
                     price = None
                     prev_close = None
 
-                    if info and hasattr(info, "last_price"):
+                    if info and hasattr(info, "last_price") and info.last_price is not None:
                         price = float(info.last_price)
-                        prev_close = float(info.previous_close) if hasattr(info, "previous_close") else price
+                        prev_close = (
+                            float(info.previous_close)
+                            if getattr(info, "previous_close", None) is not None
+                            else price
+                        )
                     else:
                         hist = ticker.history(period="2d")
                         if not hist.empty:
@@ -80,16 +81,16 @@ class BazaarService:
                         change_pct = round((change_abs / prev_close) * 100, 2) if prev_close else 0.0
                         cur.execute(
                             """
-                            INSERT OR REPLACE INTO market_cache 
+                            INSERT OR REPLACE INTO market_cache
                             (symbol, price, change_abs, change_pct, as_of, source, is_sample)
                             VALUES (?, ?, ?, ?, ?, 'yfinance', 0);
                             """,
-                            (sym, round(price, 2), change_abs, change_pct, now.isoformat())
+                            (sym, round(price, 2), change_abs, change_pct, now.isoformat()),
                         )
                 except Exception as sym_err:
-                    print(f"[Bazaar] Live fetch skipped for {sym}: {sym_err}")
-        except Exception as e:
-            print(f"[Bazaar] Live market refresh skipped (offline or timeout): {e}")
+                    logger.debug("Live fetch skipped for %s: %s", sym, sym_err)
+        except Exception as exc:
+            logger.info("Live market refresh skipped (offline or timeout): %s", exc)
         finally:
             socket.setdefaulttimeout(prev_timeout)
 
@@ -103,12 +104,15 @@ class BazaarService:
             return dict(row) if row else None
 
     @classmethod
-    def market_snapshot(cls, scope: str = "overview", symbols: Optional[List[str]] = None,
-                        lang: str = "hinglish") -> Dict[str, Any]:
+    def market_snapshot(
+        cls,
+        scope: str = "overview",
+        symbols: Optional[List[str]] = None,
+        lang: str = "hinglish",
+    ) -> Dict[str, Any]:
         """Fetch market snapshot and return plain-language audio briefing."""
         with get_db() as conn:
             cls.refresh_quotes_if_needed(conn)
-
             cur = conn.cursor()
             cur.execute(
                 """
@@ -125,10 +129,9 @@ class BazaarService:
                 "scope": scope,
                 "quotes": [],
                 "status": "unavailable",
-                "reply_text": "Bazaar data filhaal uplabdh nahi hai. Kripya thodi der baad dekhein."
+                "reply_text": "Bazaar data filhaal uplabdh nahi hai. Kripya thodi der baad dekhein.",
             }
 
-        # Identify Sensex and Nifty for verbal briefing
         sensex = next((r for r in rows if "Sensex" in r["label"]), rows[0])
         nifty = next((r for r in rows if "Nifty" in r["label"]), rows[1] if len(rows) > 1 else rows[0])
 
@@ -137,9 +140,12 @@ class BazaarService:
         dir_text = "upar" if (sensex.get("change_abs") or 0) >= 0 else "neeche"
 
         is_sample = any(r.get("is_sample") == 1 for r in rows)
-        freshness_label = "Live" if (settings.MARKET_SOURCE == "yfinance" and not is_sample) else ("Sample data" if is_sample else "Cached")
+        freshness_label = (
+            "Live"
+            if (settings.MARKET_SOURCE == "yfinance" and not is_sample)
+            else ("Sample data" if is_sample else "Cached")
+        )
         sample_tag = " Yeh namuna data hai, nivesh salaah nahi." if is_sample else " Nivesh salaah nahi."
-
         reply = f"Sensex aaj {sensex_pts:,} par {abs(sensex_chg)} point {dir_text} band hua.{sample_tag}"
 
         return {
@@ -150,7 +156,7 @@ class BazaarService:
             "is_sample": is_sample,
             "freshness": freshness_label,
             "as_of": sensex.get("as_of"),
-            "reply_text": reply
+            "reply_text": reply,
         }
 
     @staticmethod
@@ -160,17 +166,18 @@ class BazaarService:
         if not clean_sym.endswith(".NS") and not clean_sym.startswith("^"):
             clean_sym = f"{clean_sym}.NS"
 
+        display_label = symbol_or_name.strip().capitalize()
         with get_db() as conn:
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM watchlist;")
             next_pos = cur.fetchone()[0] + 1
             cur.execute(
-                """
-                INSERT OR IGNORE INTO watchlist (symbol, label, position)
-                VALUES (?, ?, ?);
-                """,
-                (clean_sym, symbol_or_name.capitalize(), next_pos)
+                "INSERT OR IGNORE INTO watchlist (symbol, label, position) VALUES (?, ?, ?);",
+                (clean_sym, display_label, next_pos),
             )
 
-        reply = f"{symbol_or_name.capitalize()} aapki watchlist mein jod diya gaya hai."
-        return {"symbol": clean_sym, "label": symbol_or_name, "reply_text": reply}
+        return {
+            "symbol": clean_sym,
+            "label": symbol_or_name,
+            "reply_text": f"{display_label} aapki watchlist mein jod diya gaya hai.",
+        }

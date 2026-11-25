@@ -5,85 +5,79 @@ and manual transaction/undo actions.
 """
 
 from typing import Optional
-from fastapi import APIRouter
-from pydantic import BaseModel
-from app.db.session import get_db
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
 from app.modules.khata.service import KhataService
 
 router = APIRouter(prefix="/api/v1/khata", tags=["Bol-Khata"])
 
+
 class TransactionRequest(BaseModel):
-    customer_name: str
+    customer_name: str = Field(..., min_length=1, max_length=120)
     kind: str  # 'CREDIT' or 'PAYMENT'
-    amount: float
+    amount: float = Field(..., gt=0, le=100000)
     note: Optional[str] = None
     session_id: Optional[str] = "default"
+
 
 class UndoRequest(BaseModel):
     session_id: Optional[str] = "default"
 
+
 @router.get("/customers")
 async def get_customers():
     """List all customers and their outstanding ledger balances."""
-    with get_db() as conn:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT c.id, c.name, c.name_roman, c.phone, COALESCE(b.balance_paise, 0) AS balance_paise
-            FROM customers c
-            LEFT JOIN customer_balances b ON b.customer_id = c.id
-            ORDER BY c.id ASC;
-            """
-        )
-        return [dict(r) for r in cur.fetchall()]
+    return KhataService.list_customers()
+
 
 @router.get("/customer/{customer_id}/entries")
 async def get_customer_entries(customer_id: int):
     """Get ledger history entries for a specific customer."""
-    with get_db() as conn:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT id, kind, amount_paise, note, created_at, voided_at
-            FROM ledger_entries
-            WHERE customer_id = ?
-            ORDER BY created_at DESC;
-            """,
-            (customer_id,)
-        )
-        return [dict(r) for r in cur.fetchall()]
+    return KhataService.get_customer_entries(customer_id)
+
 
 @router.get("/summary")
 async def get_daily_summary():
     """Get today's total credit given and payments collected."""
     return KhataService.daily_summary()
 
+
 @router.get("/debtors")
 async def get_top_debtors():
     """Get top 5 customers with highest unpaid credit."""
     return KhataService.top_debtors(limit=5)
 
+
 @router.post("/transaction")
 async def add_manual_transaction(req: TransactionRequest):
     """Add credit or payment manually via form."""
-    k = req.kind.strip().upper()
-    if k == "CREDIT":
-        res = KhataService.add_credit(
-            customer_name=req.customer_name,
+    customer_name = req.customer_name.strip()
+    if not customer_name:
+        raise HTTPException(status_code=422, detail="customer_name cannot be blank.")
+
+    kind = req.kind.strip().upper()
+    session_id = req.session_id or "default"
+
+    if kind in ("CREDIT", "UDHAAR"):
+        return KhataService.add_credit(
+            customer_name=customer_name,
             amount=req.amount,
             note=req.note,
-            session_id=req.session_id or "default"
+            session_id=session_id,
         )
-    elif k in ("PAYMENT", "JAMA"):
-        res = KhataService.add_payment(
-            customer_name=req.customer_name,
+    if kind in ("PAYMENT", "JAMA"):
+        return KhataService.record_payment(
+            customer_name=customer_name,
             amount=req.amount,
             note=req.note,
-            session_id=req.session_id or "default"
+            session_id=session_id,
         )
-    else:
-        return {"error": f"Invalid transaction kind: '{req.kind}'. Expected CREDIT or PAYMENT."}
-    return res
+    raise HTTPException(
+        status_code=400,
+        detail=f"Invalid transaction kind: '{req.kind}'. Expected CREDIT or PAYMENT.",
+    )
+
 
 @router.post("/undo")
 async def undo_transaction(req: UndoRequest):

@@ -4,142 +4,152 @@ Converts speech transcripts into structured JSON actions matching VAANI intent s
 STRICT PRIVACY & ZERO MOCK DATA: Never invents or substitutes customer names.
 """
 
-import re
 import json
-import unicodedata
-from typing import Dict, Any, List, Optional, Tuple
+import logging
+import re
+from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 # Spoken number words mapping for Hindi, Marathi, and Hinglish
 SPOKEN_NUMBERS = {
     "dedh sau": 150, "dhai sau": 250, "savaa sau": 125, "paune do sau": 175,
-    "sau": 100, "ek sau": 100, "do sau": 200, "teen sau": 300, "char sau": 400,
+    "ek sau": 100, "do sau": 200, "teen sau": 300, "char sau": 400,
     "chaar sau": 400, "paanch sau": 500, "panch sau": 500, "chhah sau": 600,
-    "saat sau": 700, "aath sau": 800, "nau sau": 900, "hazaar": 1000,
+    "saat sau": 700, "aath sau": 800, "nau sau": 900,
     "ek hazaar": 1000, "do hazaar": 2000, "paanch hazaar": 5000, "das hazaar": 10000,
+    "sau": 100, "hazaar": 1000,
     "दोनशे": 200, "तीनशे": 300, "चारशे": 400, "पाचशे": 500, "दीडशे": 150,
-    "अडीचशे": 250, "हजार": 1000, "पाच हजार": 5000,
+    "अडीचशे": 250, "पाच हजार": 5000, "हजार": 1000,
+    "डेढ़ सौ": 150, "ढाई सौ": 250,
+    "दो सौ": 200, "तीन सौ": 300, "चार सौ": 400, "पाँच सौ": 500, "पाच सौ": 500, "पांच सौ": 500,
+    "पाँच हजार": 5000, "पांच हजार": 5000, "हज़ार": 1000,
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पाँच": 5, "पाच": 5, "दस": 10,
-    "बीस": 20, "पचास": 50, "सौ": 100, "डेढ़ सौ": 150, "ढाई सौ": 250,
-    "दो सौ": 200, "तीन सौ": 300, "चार सौ": 400, "पाँच सौ": 500, "पाच सौ": 500,
-    "पाँच हजार": 5000, "पाच हजार": 5000, "हज़ार": 1000
+    "बीस": 20, "पचास": 50, "सौ": 100,
 }
 
+# Pre-sorted descending by length so multi-word phrases match before single-word suffixes
+_SORTED_SPOKEN_NUMBERS = sorted(SPOKEN_NUMBERS.items(), key=lambda kv: len(kv[0]), reverse=True)
+
 DEV_DIGITS = {
-    '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
-    '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+    "०": "0", "१": "1", "२": "2", "३": "3", "४": "4",
+    "५": "5", "६": "6", "७": "7", "८": "8", "९": "9",
 }
+
 
 def normalize_devanagari_digits(s: str) -> str:
     """Convert Devanagari numerals to standard ASCII digits."""
     return "".join(DEV_DIGITS.get(c, c) for c in s)
 
+
 HONORIFICS = {
     "bhai", "bhaiya", "ji", "kaka", "bhau", "dada", "sir", "saheb", "seth",
-    "भाई", "भैया", "जी", "काका", "भाऊ", "दादा", "सर", "साहेब", "सेठ"
+    "भाई", "भैया", "जी", "काका", "भाऊ", "दादा", "सर", "साहेब", "सेठ",
 }
 
 FAM_TERMS = [
     "dadaji", "dada", "dadiji", "dadi", "nanaji", "nana", "naniji", "nani",
     "maa", "mummy", "papa", "pitaji", "bhai", "behan", "bete", "bacche", "aai", "baba", "kaka", "kaki",
     "दादाजी", "दादा", "दादीजी", "दादी", "नानाजी", "नाना", "नानीजी", "नानी",
-    "माँ", "मां", "माताजी", "पापा", "पिताजी", "भाई", "बहन", "बच्चे", "आई", "बाबा", "काका", "काकी"
+    "माँ", "मां", "माताजी", "पापा", "पिताजी", "भाई", "बहन", "बच्चे", "आई", "बाबा", "काका", "काकी",
 ]
 
 COMMON_MED_CONDITIONS = [
-    r"(?:bp|बीपी)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|dawaai|गोली|दवा|औषध)",
-    r"(?:sugar|शुगर)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|dawaai|गोली|दवा|औषध)",
-    r"(?:bukhar|ताप|fever)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|गोली|दवा|औषध)",
-    r"(?:dard|दर्द)\s*(?:ki|chi|की|ची)?\s*(?:goli|dawa|dawai|गोली|दवा|औषध)",
-    r"(?:khansi|cough)\s*(?:ki|chi|की|ची)?\s*(?:dawa|syrup|दवा|सिरप)"
+    r"(?:bp|बीपी)\s*(?:ki|chi|ची|की)?\s*(?:goli|dawa|dawai|dawaai|गोली|गोळी|दवा|औषध)",
+    r"(?:sugar|शुगर)\s*(?:ki|chi|ची|की)?\s*(?:goli|dawa|dawai|dawaai|गोली|गोळी|दवा|औषध)",
+    r"(?:bukhar|ताप|fever)\s*(?:ki|chi|ची|की)?\s*(?:goli|dawa|dawai|गोली|गोळी|दवा|औषध)",
+    r"(?:dard|दर्द)\s*(?:ki|chi|ची|की)?\s*(?:goli|dawa|dawai|गोली|गोळी|दवा|औषध)",
+    r"(?:khansi|cough)\s*(?:ki|chi|ची|की)?\s*(?:dawa|syrup|दवा|सिरप)",
 ]
 
 STOPWORDS = {
     "aaj", "kal", "parso", "abhi", "kripya", "please", "sirf", "mera", "meri",
     "udhaar", "udhar", "jama", "hisaab", "khata", "khaata", "baki", "baaki", "total",
     "dawa", "dawai", "dawaai", "goli", "medicine", "rupaye", "rupees", "rs", "inr", "pese", "paise",
-    "आज", "कल", "हिशोब", "खाते", "खाता", "उधार", "जमा", "रुपये", "रुपया", "पैसे", "रुपये"
+    "आज", "कल", "हिशोब", "खाते", "खाता", "उधार", "जमा", "रुपये", "रुपया", "पैसे",
 }
 
 PARTICLES = [
     "ko", "ka", "ke", "ki", "ne", "se", "la",
-    "च्या", "चे", "ची", "कडून", "को", "का", "के", "की", "ने", "से", "ला"
+    "च्या", "चे", "ची", "कडून", "को", "का", "के", "की", "ने", "से", "ला",
 ]
+
+_CONSONANTS = {
+    "क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "ng",
+    "च": "ch", "छ": "chh", "ज": "j", "झ": "jh", "ञ": "ny",
+    "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n",
+    "त": "t", "थ": "th", "द": "d", "ध": "dh", "न": "n",
+    "प": "p", "फ": "ph", "ब": "b", "भ": "bh", "म": "m",
+    "य": "y", "र": "r", "ल": "l", "व": "v", "श": "sh", "ष": "sh", "स": "s", "ह": "h",
+    "ड़": "d", "ढ़": "dh", "क़": "q", "ख़": "kh", "ग़": "g", "ज़": "z", "फ़": "f",
+}
+_VOWELS = {
+    "अ": "a", "आ": "aa", "इ": "i", "ई": "ee", "उ": "u", "ऊ": "oo", "ऋ": "ri",
+    "ए": "e", "ऐ": "ai", "ओ": "o", "औ": "au",
+}
+_MATRAS = {
+    "ा": "a", "ि": "i", "ी": "i", "ु": "u", "ू": "u", "ृ": "ri",
+    "े": "e", "ै": "ai", "ो": "o", "ौ": "au", "ं": "n", "ँ": "n", "ः": "h",
+}
+
 
 def transliterate_devanagari(text: str) -> str:
     """Deterministic Devanagari to Latin transliteration for customer names."""
-    consonants = {
-        'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
-        'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
-        'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
-        'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
-        'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
-        'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
-        'ड़': 'd', 'ढ़': 'dh', 'क़': 'q', 'ख़': 'kh', 'ग़': 'g', 'ज़': 'z', 'फ़': 'f'
-    }
-    vowels = {
-        'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri',
-        'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au'
-    }
-    matras = {
-        'ा': 'a', 'ि': 'i', 'ी': 'i', 'ु': 'u', 'ू': 'u', 'ृ': 'ri',
-        'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ं': 'n', 'ँ': 'n', 'ः': 'h'
-    }
-    virama = '्'
-
-    res = []
+    virama = "्"
+    res: List[str] = []
     i = 0
     n = len(text)
+
     while i < n:
         c = text[i]
-        if c in consonants:
-            base = consonants[c]
+        if c in _CONSONANTS:
+            base = _CONSONANTS[c]
             if i + 1 < n:
                 next_c = text[i + 1]
-                if next_c in matras:
-                    res.append(base + matras[next_c])
+                if next_c in _MATRAS:
+                    res.append(base + _MATRAS[next_c])
                     i += 2
                     continue
-                elif next_c == virama:
+                if next_c == virama:
                     res.append(base)
                     i += 2
                     continue
-            if i + 1 < n and text[i + 1] in consonants:
-                res.append(base + 'a')
+            if i + 1 < n and text[i + 1] in _CONSONANTS:
+                res.append(base + "a")
             else:
                 res.append(base)
             i += 1
-        elif c in vowels:
-            res.append(vowels[c])
+        elif c in _VOWELS:
+            res.append(_VOWELS[c])
             i += 1
-        elif c in matras:
-            res.append(matras[c])
+        elif c in _MATRAS:
+            res.append(_MATRAS[c])
             i += 1
         else:
             res.append(c)
             i += 1
 
-    trans = ''.join(res).strip()
+    trans = "".join(res).strip()
     return trans.capitalize() if trans else text
 
+
 def extract_number(text: str) -> Optional[float]:
-    """Extract numeric amount from digits or spoken words."""
-    # Check digits e.g. 500, ₹200, 1,200
-    digits_match = re.search(r"₹?\s*([0-9]+(?:,[0-9]+)?)", text)
+    """Extract numeric amount from ASCII/Devanagari digits or spoken words."""
+    normalized = normalize_devanagari_digits(text)
+    digits_match = re.search(r"₹?\s*([0-9]+(?:,[0-9]+)?)", normalized)
     if digits_match:
         try:
             return float(digits_match.group(1).replace(",", ""))
         except ValueError:
             pass
 
-    # Check spoken phrases
     text_lower = text.lower()
-    for phrase, val in SPOKEN_NUMBERS.items():
+    for phrase, val in _SORTED_SPOKEN_NUMBERS:
         if phrase in text_lower or phrase in text:
             return float(val)
-
     return None
 
 class EvonParser:
@@ -243,8 +253,8 @@ T: "bhai ko 300 diye"
                         if "amount_rupees" in args and "amount" not in args:
                             args["amount"] = args["amount_rupees"]
                     return res
-            except Exception as e:
-                print(f"[Evon] Live call failed ({e}), using deterministic rules parser.")
+            except Exception as exc:
+                logger.warning("Evon live call failed (%s), using deterministic rules parser.", exc)
 
         # High-precision deterministic rules fallback
         result = cls.rules_fallback_parser(transcript, lang_hint)
@@ -367,7 +377,7 @@ T: "bhai ko 300 diye"
                 "confidence": 1.0
             }
 
-        if "mausam" in text_lower or "weather" in text_lower:
+        if any(w in text_lower for w in ("mausam", "weather", "udhaar maaf", "udhar maaf", "maaf kar do")):
             return {
                 "language": detected_lang,
                 "actions": [{"tool": "decline", "args": {"reason": "out_of_scope"}}],
@@ -396,6 +406,15 @@ T: "bhai ko 300 diye"
 
         # 6. Sensex Awaaz / Market Snapshot & Watchlist
         if any(w in text_lower for w in ["market", "bazaar", "sensex", "nifty", "reliance", "watchlist", "tcs"]):
+            if "watchlist" in text_lower and any(w in text_lower for w in ("jodo", "add", "daalo")):
+                for sym in ("TCS", "Reliance", "Infosys", "HDFC", "Wipro", "SBI"):
+                    if sym.lower() in text_lower:
+                        return {
+                            "language": detected_lang,
+                            "actions": [{"tool": "add_watchlist", "args": {"symbol_or_name": sym}}],
+                            "clarification": None,
+                            "confidence": 0.95,
+                        }
             symbols = []
             if "reliance" in text_lower:
                 symbols.append("Reliance")
@@ -411,7 +430,25 @@ T: "bhai ko 300 diye"
                 "confidence": 0.95
             }
 
-        # 7. Parchi Query & Actions (Dose status, done, snooze)
+        # 7. Ledger Payment Reminder Draft (must precede Parchi "reminder" trigger)
+        if "reminder message" in text_lower or ("reminder" in text_lower and "bana" in text_lower):
+            name_span, _, _ = cls._extract_name_and_particle(text_clean)
+            if name_span:
+                return {
+                    "language": detected_lang,
+                    "actions": [{
+                        "tool": "draft_reminder",
+                        "args": {
+                            "name_span": name_span,
+                            "customer_name": name_span,
+                            "customer_name_roman": transliterate_devanagari(name_span),
+                        },
+                    }],
+                    "clarification": None,
+                    "confidence": 0.95,
+                }
+
+        # 8. Parchi Query & Actions (Dose status, done, snooze)
         if any(w in text_lower for w in ["kaunsi dawa", "dawa dikhao", "dawa leni hai", "aaj dawa"]):
             return {
                 "language": detected_lang,
@@ -438,19 +475,19 @@ T: "bhai ko 300 diye"
                 "confidence": 0.95
             }
 
-        # 8. Parchi — Dynamic Medicine & Prescription Reminders (Devanagari & Latin)
+        # 9. Parchi — Dynamic Medicine & Prescription Reminders (Devanagari & Latin)
         parchi_triggers = [
             "dawa", "dawai", "dawaai", "goli", "medicine", "parchi", "prescription",
-            "दवा", "दवाई", "गोली", "पर्ची", "औषध", "गोळ्या", "याद दिलाओ", "याद दिलाना",
+            "दवा", "दवाई", "गोली", "गोळी", "पर्ची", "औषध", "गोळ्या", "याद दिलाओ", "याद दिलाना",
             "याद दिला", "आठवण करा", "आठवण", "yaad dilao", "yaad dila", "yaad dilana",
-            "reminder", "syrup", "tablet", "capsule", "drops", "insulin",
+            "reminder", "syrup", "tablet", "capsule", "drops", "insulin", "antibiotic",
             "paracetamol", "crocin", "combiflam", "azithromycin", "amoxicillin", "aspirin", "cetirizine",
             "पॅरासिटामॉल", "क्रोसिन", "इंसुलिन"
         ]
         if any(w in text_lower or w in text_clean for w in parchi_triggers):
             return cls._parse_parchi_prescription(text_clean, detected_lang)
 
-        # 9. Bol-Khata Inquiries & Summaries
+        # 10. Bol-Khata Inquiries & Summaries
         if any(w in text_lower for w in ["kitna baaki", "baaki kitna", "hisaab batao", "total kitna", "sabse zyada udhaar", "sabse jyada", "top"]):
             if "sabse zyada udhaar" in text_lower or "sabse jyada" in text_lower or "top" in text_lower:
                 limit_match = re.search(r"top\s*([0-9]+)", text_lower)
@@ -500,7 +537,7 @@ T: "bhai ko 300 diye"
                 "confidence": 0.5
             }
 
-        # 10. Bol-Khata Transactions (Credit & Payment)
+        # 11. Bol-Khata Transactions (Credit & Payment)
         return cls._parse_ledger_transaction(text_clean, detected_lang)
 
     @classmethod
@@ -537,11 +574,9 @@ T: "bhai ko 300 diye"
         Parse Bol-Khata credit or payment utterance with strict name_span and direction validation.
         """
         text_clean = text.strip()
-        text_lower = text_clean.lower()
-
-        # Multi-Action split: "Ramesh ko 200 udhaar likh de aur Sunita ne 150 diye"
         parts = re.split(r"\s+aur\s+|\s+and\s+|,\s*", text_clean, flags=re.IGNORECASE)
         actions = []
+        last_name_span: Optional[str] = None
 
         for part in parts:
             part_clean = part.strip()
@@ -551,9 +586,14 @@ T: "bhai ko 300 diye"
             amount = extract_number(part_clean)
             name_span, particle, clar = cls._extract_name_and_particle(part_clean)
 
+            # Carry forward subject from previous clause when omitted (e.g. "Suresh ne 1200 ka saaman liya, abhi 500 diye")
+            if not name_span and last_name_span and amount is not None:
+                name_span = last_name_span
+                particle = None
+                clar = None
+
             # If name is missing or ambiguous
             if not name_span:
-                # Check if it was an honorific without name (e.g. "bhai ko 300 diye")
                 if clar:
                     return {
                         "language": detected_lang,
@@ -561,7 +601,6 @@ T: "bhai ko 300 diye"
                         "clarification": clar,
                         "confidence": 0.4
                     }
-                # Check if amount was given with no name: "500 ka udhaar likh do"
                 if any(w in part_clean.lower() for w in ["udhaar", "likh", "jama", "diye", "उधार", "जमा"]):
                     return {
                         "language": detected_lang,
@@ -570,6 +609,8 @@ T: "bhai ko 300 diye"
                         "confidence": 0.4
                     }
                 continue
+
+            last_name_span = name_span
 
             # Direction inference (RULE 2)
             part_lower = part_clean.lower()
@@ -583,16 +624,18 @@ T: "bhai ko 300 diye"
                 payment_score += 2
 
             # Keyword check
-            if any(w in part_lower for w in ["udhaar", "udhar", "baaki", "baki", "उधार", "उधारी", "बाकी", "बाक़ी", "येणे"]):
-                credit_score += 3
+            if any(w in part_lower for w in ["udhaar", "udhar", "baaki", "baki", "saaman liya", "saman liya", "उधार", "उधारी", "बाकी", "बाक़ी", "येणे", "सामान लिया"]):
+                credit_score += 4
             if any(w in part_lower for w in ["jama", "जमा", "wapas", "वापस", "chukaya", "chukaye", "chuka", "चुकाया", "मिळाले", "paid"]):
                 payment_score += 3
 
             # "diye / diya / दिए" resolution:
             # "X ko 500 diye" -> shop gave to X -> credit
-            # "X ne 500 diye" -> X gave to shop -> payment
+            # "X ne 500 diye" or carry-forward "abhi 500 diye" -> customer paid -> payment
             if any(w in part_lower for w in ["diye", "diya", "दिए", "दिया", "दिले"]):
-                if credit_score > payment_score:
+                if particle is None and credit_score == 0:
+                    payment_score += 2
+                elif credit_score > payment_score:
                     credit_score += 1
                 elif payment_score > credit_score:
                     payment_score += 1
@@ -666,7 +709,7 @@ T: "bhai ko 300 diye"
 
         if not patient:
             pat_match = re.search(
-                r"([a-zA-Z\u0900-\u097F]+)\s*(?:ki|ke|ka|ke\s+liye|ची|च्या|की|के|का|साठी)\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)",
+                r"([a-zA-Z\u0900-\u097F]+)\s*(?:ki|ke|ka|ke\s+liye|ची|च्या|की|के|का|साठी)\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|गोळी|औषध)",
                 text_clean,
                 re.IGNORECASE
             )
@@ -695,7 +738,7 @@ T: "bhai ko 300 diye"
 
         if not med_name:
             med_match = re.search(
-                r"(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)\s+([a-zA-Z0-9\u0900-\u097F]+(?:\s+[a-zA-Z0-9\u0900-\u097F]+)?)",
+                r"(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|गोळी|औषध)\s+([a-zA-Z0-9\u0900-\u097F]+(?:\s+[a-zA-Z0-9\u0900-\u097F]+)?)",
                 text_clean,
                 re.IGNORECASE
             )
@@ -716,7 +759,7 @@ T: "bhai ko 300 diye"
 
         if not med_name:
             pre_match = re.search(
-                r"([a-zA-Z0-9\u0900-\u097F]+)\s*(?:ki|ke|ka|chi|ची|की|के)?\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|औषध)",
+                r"([a-zA-Z0-9\u0900-\u097F]+)\s*(?:ki|ke|ka|chi|ची|की|के)?\s*(?:dawa|dawai|dawaai|goli|medicine|दवा|दवाई|गोली|गोळी|औषध)",
                 text_clean,
                 re.IGNORECASE
             )
@@ -732,7 +775,8 @@ T: "bhai ko 300 diye"
         if not med_name:
             known_pharma = [
                 "paracetamol", "crocin", "combiflam", "azithromycin", "aspirin", "amoxicillin",
-                "cetirizine", "metformin", "pantocid", "digene", "vicks", "insulin", "पॅरासिटामॉल", "क्रोसिन"
+                "cetirizine", "metformin", "pantocid", "digene", "vicks", "insulin", "antibiotic",
+                "पॅरासिटामॉल", "क्रोसिन"
             ]
             for kp in known_pharma:
                 if kp in text_lower or kp in text_clean:

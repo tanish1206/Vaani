@@ -307,13 +307,11 @@ class VoiceCatalogService:
     def is_voice_supported_by_model(cls, model: str, voice_id: str) -> bool:
         """Check if a voice ID belongs strictly to the chosen TTS model."""
         norm_model = (model or "").strip().lower()
-        norm_voice = (voice_id or "").strip().lower()
-
         resolved = cls.resolve_voice_id(voice_id, target_model=norm_model)
 
         if norm_model in ("timbre-v3.0", "v3", "timbre-v3"):
             return any(v["id"].lower() == resolved.lower() for v in TIMBRE_V3_VOICES)
-        elif norm_model in ("timbre-v2.5", "v2.5", "timbre-v2"):
+        if norm_model in ("timbre-v2.5", "v2.5", "timbre-v2"):
             return any(v["id"].lower() == resolved.lower() for v in TIMBRE_V25_VOICES)
         return False
 

@@ -5,17 +5,23 @@ Zero mock data: Only returns genuine transcripts or explicit error states.
 Standardizes incoming audio streams to 16 kHz Mono WAV for guaranteed Gnani compatibility.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 import httpx
+
 from app.services.gnani.config import GnaniConfig
 from app.services.voice.audio_processor import AudioProcessor
-from app.services.gnani.exceptions import (
-    GnaniConfigurationMissingError,
-    GnaniAuthError,
-    GnaniRateLimitError,
-    GnaniTimeoutError,
-    GnaniError
-)
+
+
+def _asr_error(error: str, error_code: str) -> Dict[str, Any]:
+    """Return a standardized ASR error payload."""
+    return {
+        "success": False,
+        "transcript": "",
+        "language_code": "unknown",
+        "confidence": 0.0,
+        "error": error,
+        "error_code": error_code,
+    }
 
 class GnaniASRService:
     """Production client for Gnani Prisma v3.0 Speech-to-Text."""
@@ -39,45 +45,32 @@ class GnaniASRService:
             }
         """
         if not audio_bytes or len(audio_bytes) < 120:
-            return {
-                "success": False,
-                "transcript": "",
-                "language_code": "unknown",
-                "confidence": 0.0,
-                "error": "Audio recording is empty or too short. Please speak clearly into the microphone.",
-                "error_code": "AUDIO_TOO_SHORT"
-            }
+            return _asr_error(
+                "Audio recording is empty or too short. Please speak clearly into the microphone.",
+                "AUDIO_TOO_SHORT",
+            )
 
         if not GnaniConfig.is_configured():
-            return {
-                "success": False,
-                "transcript": "",
-                "language_code": "unknown",
-                "confidence": 0.0,
-                "error": "Gnani API key is not configured. Please add GNANI_API_KEY in .env.",
-                "error_code": "CONFIGURATION_MISSING"
-            }
+            return _asr_error(
+                "Gnani API key is not configured. Please add GNANI_API_KEY in .env.",
+                "CONFIGURATION_MISSING",
+            )
 
         # Normalize incoming audio container to Gnani-supported 16 kHz Mono RIFF WAV
         clean_bytes, clean_filename, clean_content_type = AudioProcessor.ensure_gnani_compatible_wav(
             audio_bytes=audio_bytes,
-            filename=filename
+            filename=filename,
         )
 
         headers = GnaniConfig.get_auth_headers()
         endpoint = GnaniConfig.get_asr_endpoint()
         model = GnaniConfig.get_stt_model()
 
-        # Official Gnani Prisma v3.0 parameters
         data: Dict[str, str] = {
             "model": model,
-            "format": "transcribe"
+            "format": "transcribe",
+            "language_code": language_code if (language_code and language_code != "auto") else "indic-auto",
         }
-        if language_code and language_code != "auto":
-            data["language_code"] = language_code
-        else:
-            data["language_code"] = "indic-auto"
-
         files = {"audio_file": (clean_filename, clean_bytes, clean_content_type)}
 
         try:
@@ -86,27 +79,23 @@ class GnaniASRService:
 
                 if resp.status_code == 200:
                     payload = resp.json()
-                    transcript = payload.get("transcript", "").strip()
                     lang = (
                         payload.get("detected_language_code")
                         or payload.get("language_code")
                         or (language_code if language_code != "auto" else "hi-IN")
                     )
-                    confidence = float(payload.get("confidence", 0.95))
-                    request_id = payload.get("request_id", "")
-                    latency = payload.get("end_to_end_latency") or payload.get("processing_time")
                     return {
                         "success": True,
-                        "transcript": transcript,
+                        "transcript": payload.get("transcript", "").strip(),
                         "language_code": lang,
                         "detected_language_code": lang,
-                        "confidence": confidence,
-                        "request_id": request_id,
-                        "latency": latency,
+                        "confidence": float(payload.get("confidence", 0.95)),
+                        "request_id": payload.get("request_id", ""),
+                        "latency": payload.get("end_to_end_latency") or payload.get("processing_time"),
                         "model": payload.get("model", model),
-                        "provider": "gnani-prisma-v3.0"
+                        "provider": "gnani-prisma-v3.0",
                     }
-                elif resp.status_code == 400:
+                if resp.status_code == 400:
                     try:
                         err_json = resp.json()
                         err_detail = err_json.get("error", {})
@@ -115,56 +104,25 @@ class GnaniASRService:
                     except Exception:
                         msg = resp.text[:140]
                         err_type = "BAD_REQUEST"
-                    return {
-                        "success": False,
-                        "transcript": "",
-                        "language_code": "unknown",
-                        "confidence": 0.0,
-                        "error": f"Gnani ASR rejected request: {msg}",
-                        "error_code": err_type
-                    }
-                elif resp.status_code == 401:
-                    return {
-                        "success": False,
-                        "transcript": "",
-                        "language_code": "unknown",
-                        "confidence": 0.0,
-                        "error": "Gnani API key is invalid or unauthorized (401). Please check GNANI_API_KEY in .env.",
-                        "error_code": "AUTHENTICATION_FAILED"
-                    }
-                elif resp.status_code == 429:
-                    return {
-                        "success": False,
-                        "transcript": "",
-                        "language_code": "unknown",
-                        "confidence": 0.0,
-                        "error": "Gnani rate limit reached. Please wait a moment before speaking again.",
-                        "error_code": "RATE_LIMITED"
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "transcript": "",
-                        "language_code": "unknown",
-                        "confidence": 0.0,
-                        "error": f"Gnani ASR returned status {resp.status_code}: {resp.text[:140]}",
-                        "error_code": f"UPSTREAM_ERROR_{resp.status_code}"
-                    }
+                    return _asr_error(f"Gnani ASR rejected request: {msg}", err_type)
+                if resp.status_code == 401:
+                    return _asr_error(
+                        "Gnani API key is invalid or unauthorized (401). Please check GNANI_API_KEY in .env.",
+                        "AUTHENTICATION_FAILED",
+                    )
+                if resp.status_code == 429:
+                    return _asr_error(
+                        "Gnani rate limit reached. Please wait a moment before speaking again.",
+                        "RATE_LIMITED",
+                    )
+                return _asr_error(
+                    f"Gnani ASR returned status {resp.status_code}: {resp.text[:140]}",
+                    f"UPSTREAM_ERROR_{resp.status_code}",
+                )
         except httpx.TimeoutException:
-            return {
-                "success": False,
-                "transcript": "",
-                "language_code": "unknown",
-                "confidence": 0.0,
-                "error": "Gnani ASR request timed out. Please check network connectivity.",
-                "error_code": "TIMEOUT"
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "transcript": "",
-                "language_code": "unknown",
-                "confidence": 0.0,
-                "error": f"Gnani connection error: {str(e)}",
-                "error_code": "CONNECTION_ERROR"
-            }
+            return _asr_error(
+                "Gnani ASR request timed out. Please check network connectivity.",
+                "TIMEOUT",
+            )
+        except Exception as exc:
+            return _asr_error(f"Gnani connection error: {exc}", "CONNECTION_ERROR")

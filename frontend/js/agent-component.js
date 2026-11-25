@@ -8,6 +8,15 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   class VaaniAgent {
     constructor(options = {}) {
       this.containerId = options.containerId;
@@ -23,6 +32,7 @@
       this.audioChunks = [];
       this.activeStream = null;
       this.currentAudio = null;
+      this.statusResetTimer = null;
 
       this.container = document.getElementById(this.containerId);
       if (!this.container) {
@@ -56,30 +66,30 @@
             <div class="agent-title-lockup">
               <div class="agent-avatar-orb">व</div>
               <div>
-                <div class="agent-title">${this.moduleTitle}</div>
-                <span class="agent-module-tag">${moduleBadgeText}</span>
+                <div class="agent-title">${escapeHtml(this.moduleTitle)}</div>
+                <span class="agent-module-tag">${escapeHtml(moduleBadgeText)}</span>
               </div>
             </div>
             <div class="agent-status-badge">
               <span class="agent-status-dot"></span>
-              <span id="${this.containerId}-status-text">Ready</span>
+              <span id="${escapeHtml(this.containerId)}-status-text">Ready</span>
             </div>
           </div>
 
           <!-- Messages Area -->
-          <div class="agent-messages-viewport" id="${this.containerId}-messages">
+          <div class="agent-messages-viewport" id="${escapeHtml(this.containerId)}-messages">
             <div class="agent-bubble vaani">
               <div class="agent-bubble-speaker-tag">
                 <span>VAANI &bull; बोलिए</span>
               </div>
-              <div class="agent-bubble-text">${this.initialGreeting}</div>
+              <div class="agent-bubble-text">${escapeHtml(this.initialGreeting)}</div>
             </div>
           </div>
 
           <!-- Quick Suggestion Chips -->
           <div class="agent-quick-chips">
             ${this.quickPhrases.map(phrase => `
-              <button class="agent-chip" data-phrase="${phrase}">${phrase}</button>
+              <button class="agent-chip" data-phrase="${escapeHtml(phrase)}">${escapeHtml(phrase)}</button>
             `).join('')}
           </div>
 
@@ -233,8 +243,8 @@
             <div class="confirmation-card-box">
               <p>⚠️ Bada amount darj ho raha hai. Kya aap iski pushti karte hain?</p>
               <div class="confirmation-buttons-row">
-                <button class="btn-confirm-yes" onclick="window.vaaniAgents['${this.containerId}'].processQuery('Haan, sahi hai')">Haan, likh do</button>
-                <button class="btn-confirm-no" onclick="window.vaaniAgents['${this.containerId}'].processQuery('Nahi, galat ho gaya')">Radd karein</button>
+                <button class="btn-confirm-yes" type="button">Haan, likh do</button>
+                <button class="btn-confirm-no" type="button">Radd karein</button>
               </div>
             </div>
           `;
@@ -243,25 +253,41 @@
         if (actionLinks && actionLinks.length > 0) {
           structuredHtml += `
             <div class="agent-bubble-actions">
-              ${actionLinks.map(l => `<button class="agent-action-chip" onclick="window.location.href='${l.url}'">${l.label}</button>`).join('')}
+              ${actionLinks.map(l => `<button class="agent-action-chip" type="button" data-url="${escapeHtml(l.url)}">${escapeHtml(l.label)}</button>`).join('')}
             </div>
           `;
         }
 
-        const voiceBadge = turnData && turnData.voice_id ? `🎙️ Gnani ${turnData.voice_id}` : 'VAANI • बोलिए';
+        const voiceBadge = turnData && turnData.voice_id ? `🎙️ Gnani ${escapeHtml(turnData.voice_id)}` : 'VAANI • बोलिए';
+        const safeText = actionLinks ? text : escapeHtml(text);
 
         bubble.innerHTML = `
           <div class="agent-bubble-speaker-tag">
             <span>${voiceBadge}</span>
             ${turnData && turnData.audio_base64 ? `
-              <button class="btn-replay-icon" title="Replay spoken audio" style="cursor:pointer; background:none; border:none; color:var(--aubergine-70); font-size:11px; font-weight:600;">
+              <button class="btn-replay-icon" type="button" title="Replay spoken audio" style="cursor:pointer; background:none; border:none; color:var(--aubergine-70); font-size:11px; font-weight:600;">
                 🔊 Replay
               </button>
             ` : ''}
           </div>
-          <div class="agent-bubble-text">${text}</div>
+          <div class="agent-bubble-text">${safeText}</div>
           ${structuredHtml}
         `;
+
+        const yesBtn = bubble.querySelector('.btn-confirm-yes');
+        if (yesBtn) {
+          yesBtn.addEventListener('click', () => this.processQuery('Haan, sahi hai'));
+        }
+        const noBtn = bubble.querySelector('.btn-confirm-no');
+        if (noBtn) {
+          noBtn.addEventListener('click', () => this.processQuery('Nahi, galat ho gaya'));
+        }
+        bubble.querySelectorAll('.agent-action-chip').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const url = btn.getAttribute('data-url');
+            if (url) window.location.href = url;
+          });
+        });
 
         const replayBtn = bubble.querySelector('.btn-replay-icon');
         if (replayBtn && turnData && turnData.audio_base64) {
@@ -428,6 +454,7 @@
       let phase = 0;
 
       const draw = () => {
+        if (!document.body.contains(canvas)) return;
         requestAnimationFrame(draw);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         phase += 0.06;

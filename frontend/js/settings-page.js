@@ -12,6 +12,15 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // Global Controller State
   let catalogData = null;
   let activeModel = 'timbre-v3.0';
@@ -209,18 +218,19 @@
       const isSelected = v.id.toLowerCase() === selectedVoiceId.toLowerCase();
       const isActivePersisted = isSelected && activeModel === activePersistedModel;
       const langBadge = v.primary_language_name || (v.languages ? v.languages.join(", ") : "Indian");
+      const safeId = escapeHtml(v.id);
 
       return `
-        <div class="voice-card ${isSelected ? 'selected' : ''}" id="voice-card-${v.id}" onclick="selectVoice('${v.id}')">
+        <div class="voice-card ${isSelected ? 'selected' : ''}" id="voice-card-${safeId}" data-voice-id="${safeId}">
           <div class="voice-card-header">
             <div>
               <div class="voice-name-title">
-                ${v.display_name}
-                <span style="font-size: 13px; color: var(--text-muted); font-weight: 400;">(${v.gender})</span>
+                ${escapeHtml(v.display_name)}
+                <span style="font-size: 13px; color: var(--text-muted); font-weight: 400;">(${escapeHtml(v.gender)})</span>
               </div>
               <div class="voice-badges-row">
-                <span class="voice-chip engine">${activeModel}</span>
-                <span class="voice-chip lang">${langBadge}</span>
+                <span class="voice-chip engine">${escapeHtml(activeModel)}</span>
+                <span class="voice-chip lang">${escapeHtml(langBadge)}</span>
               </div>
             </div>
             ${isActivePersisted ? `
@@ -229,22 +239,23 @@
           </div>
 
           <div style="font-size: 13px; font-weight: 600; color: var(--aubergine);">
-            ${v.persona || 'Conversational'}
+            ${escapeHtml(v.persona || 'Conversational')}
           </div>
 
           <div class="voice-desc">
-            ${v.description || 'Natural speech synthesis persona.'}
+            ${escapeHtml(v.description || 'Natural speech synthesis persona.')}
           </div>
 
           <div class="voice-sample-quote">
-            "${v.sample_text || 'नमस्ते, मैं वाणी हूँ. आपकी दुकान का डिजिटल साथी.'}"
+            "${escapeHtml(v.sample_text || 'नमस्ते, मैं वाणी हूँ. आपकी दुकान का डिजिटल साथी.')}"
           </div>
 
-          <div class="voice-card-actions" onclick="event.stopPropagation()">
+          <div class="voice-card-actions">
             <button
               class="btn-preview-voice"
-              id="preview-btn-${v.id}"
-              onclick="previewVoice('${v.id}', this)"
+              id="preview-btn-${safeId}"
+              type="button"
+              data-preview-voice="${safeId}"
               title="Preview real synthesized voice via Gnani TTS"
             >
               <span>🔊</span>
@@ -253,7 +264,8 @@
 
             <button
               class="btn-select-voice"
-              onclick="selectVoice('${v.id}')"
+              type="button"
+              data-select-voice="${safeId}"
             >
               ${isSelected ? '✓ Selected' : 'Select'}
             </button>
@@ -261,6 +273,39 @@
         </div>
       `;
     }).join('');
+
+    listEl.querySelectorAll('.voice-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const vid = card.getAttribute('data-voice-id');
+        if (vid) selectVoice(vid);
+      });
+    });
+    listEl.querySelectorAll('[data-preview-voice]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const vid = btn.getAttribute('data-preview-voice');
+        if (vid) previewVoice(vid, btn);
+      });
+    });
+    listEl.querySelectorAll('[data-select-voice]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const vid = btn.getAttribute('data-select-voice');
+        if (vid) selectVoice(vid);
+      });
+    });
+
+    // Keep #prefVoice dropdown synced with active model voices
+    const prefVoiceSel = document.getElementById("prefVoice");
+    if (prefVoiceSel) {
+      const allVoices = getVoicesForActiveModel();
+      if (allVoices.length > 0) {
+        prefVoiceSel.innerHTML = allVoices
+          .map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.display_name)} (${escapeHtml(activeModel)} — ${escapeHtml(v.persona || v.primary_language_name || '')})</option>`)
+          .join('');
+        prefVoiceSel.value = selectedVoiceId;
+      }
+    }
   }
 
   function selectVoice(voiceId) {
@@ -584,16 +629,16 @@
 
       resBox.innerHTML = `
         <div style="padding: 10px; background: #FFFFFF; border: 1px solid var(--border); border-radius: 4px; margin-top: 8px;">
-          <div><strong>Database:</strong> ${db.status.toUpperCase()} (${db.latency_ms} ms) — ${db.message}</div>
-          <div><strong>Market Feed:</strong> ${mkt.status.toUpperCase()} (${mkt.latency_ms} ms) — Symbol: ${mkt.symbol}, Source: ${mkt.source}</div>
-          <div><strong>Gnani STT (Prisma v3.0):</strong> Configured: ${ai.stt.configured} | Model: ${ai.stt.model}</div>
-          <div><strong>Evon Intent Parser:</strong> Active: Rules Engine (Deterministic Guardrails)</div>
-          <div><strong>Gnani TTS (${activeModel}):</strong> Selected Voice: ${selectedVoiceId} | Configured: ${ai.tts.configured}</div>
+          <div><strong>Database:</strong> ${escapeHtml(db.status.toUpperCase())} (${escapeHtml(db.latency_ms)} ms) — ${escapeHtml(db.message)}</div>
+          <div><strong>Market Feed:</strong> ${escapeHtml(mkt.status.toUpperCase())} (${escapeHtml(mkt.latency_ms)} ms) — Symbol: ${escapeHtml(mkt.symbol)}, Source: ${escapeHtml(mkt.source)}</div>
+          <div><strong>Gnani STT (Prisma v3.0):</strong> Configured: ${escapeHtml(ai.stt.configured)} | Model: ${escapeHtml(ai.stt.model)}</div>
+          <div><strong>Evon Intent Parser:</strong> Active: ${escapeHtml(ai.intent_understanding.model)}</div>
+          <div><strong>Gnani TTS (${escapeHtml(activeModel)}):</strong> Selected Voice: ${escapeHtml(selectedVoiceId)} | Configured: ${escapeHtml(ai.tts.configured)}</div>
         </div>
       `;
       showToast("Subsystem latency ping completed!");
     } catch (err) {
-      resBox.innerHTML = `<span style="color:#B71C1C;">Ping error: ${err.message}</span>`;
+      resBox.innerHTML = `<span style="color:#B71C1C;">Ping error: ${escapeHtml(err.message)}</span>`;
     } finally {
       btn.disabled = false;
       btn.textContent = "⚡ Test Subsystem Latency";

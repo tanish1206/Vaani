@@ -7,10 +7,20 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   class BolKhataWorkspace {
     constructor() {
       this.customers = [];
       this.activeCustomer = null;
+      this.undoTimer = null;
 
       this.initDOMElements();
       this.initAgent();
@@ -115,6 +125,17 @@
         this.undoSnackbar.classList.remove('visible');
         window.vaaniAgents['khata-agent-container'].processQuery('Galat ho gaya, hata do');
       });
+
+      // Delegated row click for customer details
+      if (this.tbody) {
+        this.tbody.addEventListener('click', (e) => {
+          const row = e.target.closest('tr[data-customer-id]');
+          if (row) {
+            const custId = Number(row.getAttribute('data-customer-id'));
+            if (!Number.isNaN(custId)) this.openCustomerDetail(custId);
+          }
+        });
+      }
     }
 
     async loadLedgerData() {
@@ -172,11 +193,11 @@
           : `<span style="font-size:11px; font-weight:700; color:var(--marigold-600); background:var(--marigold-100); padding:2px 8px; border-radius:var(--radius-pill);">Udhaar Baaki</span>`;
 
         return `
-          <tr style="cursor: pointer; transition: background var(--dur-fast);" onclick="window.khataWorkspace.openCustomerDetail(${c.id})">
+          <tr data-customer-id="${Number(c.id)}" style="cursor: pointer; transition: background var(--dur-fast);">
             <td><strong>${idx + 1}</strong></td>
             <td>
-              <div style="font-weight:700; color:var(--aubergine); font-size:15px;">${c.name}</div>
-              <div style="font-size:12px; color:var(--text-muted);">${c.name_roman}</div>
+              <div style="font-weight:700; color:var(--aubergine); font-size:15px;">${escapeHtml(c.name)}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${escapeHtml(c.name_roman)}</div>
             </td>
             <td>
               <span class="customer-balance-chip" style="background:${isCleared ? 'var(--ice-50)' : 'var(--marigold)'}; color:var(--aubergine);">
@@ -185,7 +206,7 @@
             </td>
             <td>${statusBadge}</td>
             <td style="text-align: right;">
-              <button class="utility-chip-btn" onclick="event.stopPropagation(); window.khataWorkspace.openCustomerDetail(${c.id})">
+              <button class="utility-chip-btn" type="button">
                 Tafseel &rarr;
               </button>
             </td>
@@ -223,11 +244,11 @@
             <div style="display:flex; justify-content:space-between; align-items:center; background:var(--ice-50); padding:10px 14px; border-radius:var(--radius-sm); border-left:3px solid ${e.kind === 'CREDIT' ? 'var(--danger)' : 'var(--success)'};">
               <div>
                 <span style="font-weight:700; font-size:13.5px; color:${e.kind === 'CREDIT' ? 'var(--danger)' : 'var(--success)'};">
-                  ${e.kind === 'CREDIT' ? '+ ₹' : '− ₹'}${(e.amount_paise / 100).toLocaleString('en-IN')} (${e.kind})
+                  ${e.kind === 'CREDIT' ? '+ ₹' : '− ₹'}${(e.amount_paise / 100).toLocaleString('en-IN')} (${escapeHtml(e.kind)})
                 </span>
-                <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">${e.note || ''}</span>
+                <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">${escapeHtml(e.note || '')}</span>
               </div>
-              <span style="font-size:11px; color:var(--text-subtle);">${e.created_at ? e.created_at.split('T')[0] : ''}</span>
+              <span style="font-size:11px; color:var(--text-subtle);">${escapeHtml(e.created_at ? e.created_at.split('T')[0] : '')}</span>
             </div>
           `).join('');
         }
@@ -255,7 +276,8 @@
     showUndoSnackbar() {
       if (!this.undoSnackbar) return;
       this.undoSnackbar.classList.add('visible');
-      setTimeout(() => {
+      clearTimeout(this.undoTimer);
+      this.undoTimer = setTimeout(() => {
         this.undoSnackbar.classList.remove('visible');
       }, 8000);
     }

@@ -204,12 +204,9 @@
 
     initHeaderScroll() {
       const header = document.querySelector('.site-header');
+      if (!header) return;
       window.addEventListener('scroll', () => {
-        if (window.scrollY > 40) {
-          header.classList.add('scrolled');
-        } else {
-          header.classList.remove('scrolled');
-        }
+        header.classList.toggle('scrolled', window.scrollY > 40);
       });
     }
 

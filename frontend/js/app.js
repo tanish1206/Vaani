@@ -7,6 +7,15 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   class VaaniApp {
     constructor() {
       this.currentTab = 'khata';
@@ -190,12 +199,12 @@
       bubble.innerHTML = `
         <div class="vaani-bubble-header">
           <span>VAANI &bull; बोलिए</span>
-          <button class="btn-replay-speech" title="Replay voice">
+          <button class="btn-replay-speech" type="button" title="Replay voice">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
             Replay
           </button>
         </div>
-        <div>${text}</div>
+        <div>${escapeHtml(text)}</div>
       `;
       const replayBtn = bubble.querySelector('.btn-replay-speech');
       replayBtn.addEventListener('click', () => this.speakNative(text, lang));
@@ -338,19 +347,26 @@
             <tr>
               <td><strong>${idx + 1}</strong></td>
               <td>
-                <div style="font-weight: 700; color: var(--aubergine);">${c.name}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${c.name_roman}</div>
+                <div style="font-weight: 700; color: var(--aubergine);">${escapeHtml(c.name)}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(c.name_roman)}</div>
               </td>
               <td>
                 <span class="customer-balance-chip">&#8377;${(c.balance_paise / 100).toLocaleString('en-IN')}</span>
               </td>
               <td>
-                <button class="quick-chip" onclick="window.vaaniApp.executeTurn('${c.name_roman} ka kitna baaki hai')">
+                <button class="quick-chip khata-balance-btn" type="button" data-customer-roman="${escapeHtml(c.name_roman)}">
                   Hisaab Dekhein
                 </button>
               </td>
             </tr>
           `).join('');
+
+          this.customersTableBody.querySelectorAll('.khata-balance-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const name = btn.getAttribute('data-customer-roman');
+              if (name) this.executeTurn(`${name} ka kitna baaki hai`);
+            });
+          });
         }
 
         // Populate metrics

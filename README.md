@@ -1,190 +1,214 @@
 # VAANI · वाणी
 
-> *Boliye. Vaani Sambhal Legi.*  
+> ***Boliye. Vaani Sambhal Legi.***  
 > A multilingual, voice-first AI assistant for Indian shopkeepers, small businesses, and families: **digital business ledger (Bol-Khata)**, **medicine reminders (Parchi)**, and a **plain-language market briefing (Sensex Awaaz)** — in Hindi, Marathi, English, and code-mixed speech (Hinglish).
 
-Built for the Gnani **Great Indian AI Internship Challenge** on Gnani's sovereign Indian foundation models:
+Built for the **Gnani Great Indian AI Internship Challenge** around Gnani's sovereign Indian foundation models:
 
-| Stage | Model | Role |
+| Stage | Model / Engine | Role |
 |---|---|---|
-| **Speech-to-Text** | **Prisma v3.0** | Multilingual automatic language detection & speech transcription |
-| **Reasoning & Tool Extraction** | **Evon v3.3 (30B-A3B)** | Strict structured JSON action extraction |
-| **Text-to-Speech** | **Timbre v2.5** | High-fidelity Indian voice synthesis in Hindi, Marathi, and English |
+| **Speech-to-Text (STT)** | **Gnani Prisma v3.0** | Multilingual REST & real-time WebSocket transcription with automatic Indic language detection |
+| **Intent Reasoning** | **Gnani Evon v3.3 (30B-A3B)** + Deterministic Rules Engine | Strict structured JSON action extraction with offline deterministic fallback |
+| **Text-to-Speech (TTS)** | **Gnani Timbre v3.0** (13 Pan-India voices) & **Timbre v2.5** (42 vernacular voices) | Expressive Indian voice synthesis across 10 Indian languages |
 
 ---
 
-## Architecture & Data Flow
+## Key Architectural Invariant
+
+> **Python validates, calculates, and writes the database. The language model only understands.**  
+> The LLM never touches financial records directly and never computes customer balances. All monetary calculations execute deterministically in integer **paise** inside Python and SQLite.
 
 ```
-Shopkeeper Voice (WAV 16kHz)
+Shopkeeper Voice (Browser WebM/OGG/MP4/WAV)
+  ↓  In-memory transcoding (PyAV → 16 kHz Mono 16-bit PCM WAV)
+Gnani Prisma v3.0 (STT) → Transcript + Detected Language
   ↓
-Prisma v3.0 (STT) → Transcript + Language Detection
+Gnani Evon v3.3 (or Deterministic Multilingual Rules Fallback) → Structured JSON Intent
   ↓
-Evon v3.3 (Reasoning) → Strict JSON Intent Contract
+Python Guardrails → Name-Span Verification, Direction Cross-Check, ₹1L Cap, Medical/SEBI Refusal
   ↓
-Python Guardrails → Amount Limits, Strict Verbatim Check, Medical/Financial Refusal
+Local SQLite WAL (vaani.db) → Integer Paise Arithmetic & Append-Only Audit Trail
   ↓
-Local SQLite WAL (vaani.db) → Integer Paise Precision, Append-Only Audit Trail
-  ↓
-Template Phrasing & Timbre v2.5 (TTS) → Spoken Natural Voice + Live UI Result Cards
+Localized Reply Templates + Gnani Timbre v3.0 / v2.5 (TTS) → Spoken Audio + Live Workspace Cards
 ```
 
-> **Key Architectural Invariant:** Python validates, calculates, and writes the database. The language model only understands. The LLM never touches financial records directly and never computes balances.
+---
+
+## Core Product Modules
+
+1. **Bol-Khata (बोल-खाता) — Digital Business Ledger**
+   - Records customer credit (*udhaar*) and payments (*jama*) via voice or manual forms, including compound multi-action utterances (e.g., *"Ramesh ko 200 udhaar likh de aur Sunita ne 150 diye"*).
+   - Fuzzy customer matching (`rapidfuzz`) normalizes honorifics and transliterated Devanagari/Latin names (e.g., `"रमेश"`, `"Ramesh"`, `"Ramesh ji"`).
+   - Integer paise arithmetic (`to_paise` / `format_rupees`) prevents floating-point drift.
+   - Append-only ledger with **8-second Voice Undo** (*"Galat ho gaya, hata do"*), entry correction (*"Nahi, 300 likh"*), top debtors, daily cashflow summaries, and WhatsApp reminder drafts.
+
+2. **Parchi (पर्ची) — Family Medicine Reminders**
+   - Stores patient labels, medicine names, and `dose_text` strictly verbatim from the user's transcript (strips any unverified or hallucinated dosages).
+   - Maps Indian meal slots (*subah, dopahar, shaam, raat, khaane ke baad/pehle*) and explicit clock times to scheduled reminders.
+   - Supports marking doses done (*"De di"*), snoozing (*"10 minute baad yaad dilana"*), and strictly refuses medical advice or dosage modifications while routing emergencies (`chest pain`, `saans`, etc.) to `108` / emergency care.
+
+3. **Sensex Awaaz (सेंसेक्स आवाज़) — Plain-Language Market Briefing**
+   - Summarizes BSE Sensex, Nifty 50, and personal stock watchlists in jargon-free Hindi/Hinglish.
+   - Integrates Yahoo Finance (`yfinance`) with a 5-minute SQLite cache (`market_cache`), 2-second socket timeout protection, and honest freshness badges (`Live`, `Cached`, `Sample data`, or `Unavailable`).
+   - Strictly refuses buy/sell recommendations or price targets.
+
+---
+
+## Multi-Page Application Routes
+
+| Route | Workspace | Capabilities |
+|---|---|---|
+| `/` | **Landing Page** | Editorial design with scroll-driven botanical blossom hero, interactive Bol-Khata/Parchi/Sensex showcases, live Voice Lab inspector, multilingual switcher, and FAQ |
+| `/app` | **Overview Hub** | Central summary metrics, workspace launcher cards, AI readiness status badges, and global conversational agent |
+| `/app/bol-khata` | **Bol-Khata** | Customer ledger table, live search, customer entry history drawer, manual Credit/Payment modals, WhatsApp reminder copy, and contextual Khata agent |
+| `/app/parchi` | **Parchi** | Today's dose timeline, active prescriptions summary, quick Mark Done / 10m Snooze controls, prescription modal, and contextual Parchi agent |
+| `/app/sensex-awaaz` | **Sensex Awaaz** | BSE Sensex & Nifty 50 tiles, candlestick movement spectrum, spoken audio briefing player, personal watchlist table, and contextual Bazaar agent |
+| `/app/settings` | **Settings & Diagnostics** | Two-model Gnani voice browser (55 voices across Timbre v3.0 & v2.5) with live ephemeral previews, shopkeeper thresholds, subsystem latency pings, and clean-slate DB reset |
 
 ---
 
 ## Quick Start
 
-### 1. Requirements
-- Python 3.10+
-- Modern Web Browser (Chrome, Edge) supporting Web Audio & MediaRecorder
+### 1. Prerequisites
+- **Python 3.10+**
+- Modern browser (Chrome, Edge, Firefox) with microphone / `MediaRecorder` support for live voice turns
 
-### 2. Run Development Server
+### 2. Installation
+```bash
+git clone <your-repo-url>
+cd Vaani
+python -m venv .venv
+
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+# macOS / Linux
+# source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### 3. Configure Environment
+Copy `.env.example` to `.env` inside `Vaani/` (or project root) and set your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Key environment variables:
+```ini
+# Gnani Sovereign Speech APIs (Server-Side Only)
+GNANI_API_KEY=your_gnani_api_key
+GNANI_BASE_URL=https://api.vachana.ai
+GNANI_STT_MODEL=prisma-v3.0
+GNANI_TTS_MODEL=timbre-v3.0
+GNANI_DEFAULT_VOICE=Shivani
+
+# Optional Self-Hosted Evon v3.3 OpenAI-Compatible Endpoint
+# When EVON_API_KEY is unset, VAANI automatically uses its deterministic rules parser
+EVON_ENABLED=true
+EVON_BASE_URL=http://localhost:8001
+EVON_MODEL=gnani/gnani-evon-v3.3-30B-A3B
+EVON_API_KEY=
+
+# Market Data ("yfinance" | "dhan" | "sample")
+MARKET_SOURCE=yfinance
+
+# Application & Local Database
+DB_PATH=data/vaani.db
+DEMO_MODE=false
+DEBUG=false
+CORS_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+```
+
+> **Security Guarantee:** API keys remain strictly server-side. Diagnostics endpoints (`/api/v1/health`, `/api/v1/settings/diagnostics`) only expose masked credentials (e.g., `vach****1760` or `Not Configured`) and never leak secrets or stack traces in production (`DEBUG=false`).
+
+### 4. Run the Development Server
 ```bash
 python scripts/run_dev.py
 ```
-Open [http://localhost:8000](http://localhost:8000) in your browser.
-
-### 3. Run Test Suite
-```bash
-$env:PYTHONPATH="backend"; python scripts/test_landing_server.py
-```
+Open **[http://localhost:8000](http://localhost:8000)** for the landing page or **[http://localhost:8000/app](http://localhost:8000/app)** for the multi-page workspace.
 
 ---
 
-## Three Core Modules
+## API Overview
 
-1. **Bol-Khata (बोल-खाता):** Digital business ledger. Handles credit (*udhaar*) and payment (*jama*) transactions with fuzzy customer matching (e.g., "रमेश" / "Ramesh"), integer paise math (never float drift), and an 8-second voice undo snackbar.
-2. **Parchi (पर्ची):** Medicine reminders. Verbatim dosage recording without alteration, smart meal-slot scheduling (*subah, shaam, dopahar, khaane ke baad*), and automatic refusal of medical advice.
-3. **Sensex Awaaz (सेंसेक्स आवाज़):** Spoken market overview. Plain-language summaries of BSE Sensex, Nifty 50, and watchlists with honest data freshness badges, and automatic refusal of investment recommendations.
+Base path: `/api/v1`
 
----
-
-## Multi-Page Product Architecture
-
-VAANI features a dedicated multi-page workspace architecture:
-
-| URL Route | Workspace | Description |
-|---|---|---|
-| `/` | **Landing Page** | Editorial landing page matching the visual direction with botanical orchid, golden audio waveforms, layered cards, and interactive voice demo |
-| `/app` | **Overview Hub** | Central entry point showing quick balance statistics, meal slot timeline, live Sensex ticker, and global conversational agent |
-| `/app/bol-khata` | **Bol-Khata** | Dedicated digital business ledger with customer search, customer drawer, add credit / record payment forms, WhatsApp reminder copy, and contextual voice agent |
-| `/app/parchi` | **Parchi** | Dedicated medicine reminder workspace with meal-slot schedule (*subah, dopahar, shaam, raat*), "Mark Done", "Snooze 10m", add prescription dialog, and contextual voice agent |
-| `/app/sensex-awaaz` | **Sensex Awaaz** | Dedicated market workspace with live Sensex & Nifty tiles, candlestick movement spectrum, personal watchlist, spoken market briefings, honest freshness tags, and contextual voice agent |
-| `/app/settings` | **Settings & Diagnostics** | Shopkeeper preferences & evaluator AI readiness diagnostics (Prisma STT, Evon LLM, Timbre TTS, Market Provider, database health, masked credentials, demo reset) |
+| Group | Endpoints |
+|---|---|
+| **Turns** | `POST /api/v1/text/turn`, `POST /api/v1/voice/turn`, `WS /api/v1/voice/stream` |
+| **Voice Engine** | `GET /api/v1/voice/health`, `GET /api/v1/voice/catalog`, `GET /api/v1/voice/options`, `POST /api/v1/voice/preview`, `POST /api/v1/voice/transcribe`, `POST /api/v1/voice/speak` |
+| **Bol-Khata** | `GET /api/v1/khata/customers`, `GET /api/v1/khata/customer/{id}/entries`, `GET /api/v1/khata/summary`, `GET /api/v1/khata/debtors`, `POST /api/v1/khata/transaction`, `POST /api/v1/khata/undo` |
+| **Parchi** | `GET /api/v1/parchi/doses`, `POST /api/v1/parchi/dose/{id}/done`, `POST /api/v1/parchi/done`, `POST /api/v1/parchi/snooze` |
+| **Sensex Awaaz** | `GET /api/v1/bazaar/snapshot`, `GET /api/v1/bazaar/overview`, `GET /api/v1/bazaar/briefing`, `POST /api/v1/bazaar/watchlist` |
+| **Settings & Health** | `GET /api/v1/health`, `GET/POST /api/v1/settings`, `GET/PUT /api/v1/settings/voice`, `GET /api/v1/settings/diagnostics`, `POST /api/v1/settings/test-connectivity`, `POST /api/v1/settings/reset-demo` |
 
 ---
 
-## Verification & Testing Suite
+## Verification & Test Suites
 
-Run the automated verification test suites:
+Run the automated test suites and benchmarks:
 
 ```bash
-# 1. 40-Utterance Conversational Benchmark (100% Pass)
+# 1. Unit, Guardrail, and Isolated API Regression Tests (pytest)
+python -m pytest tests -v
+
+# 2. 40-Utterance Multilingual Conversational Benchmark
 python scripts/eval_utterances.py
 
-# 2. Phase 1 Server & Asset Integration Tests (100% Pass)
-python scripts/test_landing_server.py
-
-# 3. Phase 2 Multi-Page & API Readiness Test Suite (100% Pass)
+# 3. Phase 2 Multi-Page & API Readiness Verification
 python scripts/test_phase2_multi_page.py
+
+# 4. Landing Page & Gnani Branding Verification
+python scripts/test_phase2_frontend.py
+
+# 5. Gnani Speech Integration, Catalogue & Zero-Demo-Data Verification
+python scripts/test_gnani_speech_integration.py
 ```
 
 ---
 
-## Configuration & Secret Safety
+## Deployment (Vercel Serverless)
 
-Copy `.env.example` to `.env` to configure live credentials:
-
-```bash
-# Production vs Demo Mode
-DEMO_MODE=true                # Set to false for clean database with zero sample fixtures
-
-# Gnani Sovereign AI Credentials (Server-Side Only)
-GNANI_API_KEY=gnan_live_...   # Unified API key for Prisma, Evon, and Timbre
-EVON_ENABLED=true             # Set to true when Evon LLM endpoint is active
-EVON_API_KEY=gnan_live_...
-
-# Market Provider
-MARKET_PROVIDER=yahoo_finance # Real-time quotes via yfinance with 5-minute cache
-```
-
-> **Security Guarantee:** Credentials are strictly server-side. Diagnostics endpoints return masked strings (`gnan_****` or `Not Configured`). Secret keys are never leaked to client browsers.
+`vercel.json` and ASGI entrypoints (`main.py`, `index.py`, `api/index.py`) are pre-configured for Vercel Python serverless deployment. When running on Vercel/AWS Lambda (`is_serverless()`), VAANI automatically copies any bundled `data/vaani.db` into the writable `/tmp/vaani.db` directory and adjusts SQLite journaling accordingly.
 
 ---
 
 ## Repository Structure
 
+```text
+Vaani/
+├── api/index.py                 # Vercel serverless ASGI entrypoint
+├── main.py / index.py           # Local & serverless FastAPI app re-exports
+├── vercel.json                  # Vercel function bundling config
+├── requirements.txt             # Python dependencies
+├── pyproject.toml               # Project metadata & Vercel entrypoint
+├── .env.example                 # Environment configuration template
+├── backend/app/
+│   ├── main.py                  # FastAPI app, routes, health check, static serving
+│   ├── config.py                # Pydantic v2 Settings & service readiness checks
+│   ├── api/                     # REST & WebSocket routers (text, voice, khata, parchi, bazaar, settings)
+│   ├── core/                    # Pipeline orchestrator, guardrails, i18n templates, session state
+│   ├── db/                      # SQLite schema.sql, WAL session manager, seed/reset utilities
+│   ├── gnani/                   # Evon v3.3 client + deterministic parser, Prisma/Timbre adapters
+│   ├── modules/                 # Domain services (khata, parchi, bazaar)
+│   └── services/
+│       ├── gnani/               # Unified GnaniClient, ASR, TTS (REST+SSE), WebSocket relay, 55-voice catalog
+│       └── voice/               # In-memory PyAV 16 kHz WAV transcoder & SQLite voice settings
+├── frontend/
+│   ├── index.html               # Editorial landing page
+│   ├── app/                     # Dedicated pages (overview, bol-khata, parchi, sensex-awaaz, settings)
+│   ├── js/                      # Controllers, reusable VaaniAgent, audio visualizer, blossom hero
+│   ├── styles/                  # Design tokens, landing, app-shell, components, agent styles
+│   └── assets/                  # Botanical & mandala SVGs, Gnani logos
+├── scripts/                     # Dev launcher, DB inspection/cleanup, eval benchmark, integration tests
+└── tests/                       # Pytest regression & isolated API unit tests
 ```
-backend/
-  app/
-    main.py              # FastAPI application, explicit HTML multi-page routes & static mount
-    config.py            # Pydantic Settings with masked credentials and readiness checks
-    api/
-      khata.py           # /api/v1/khata endpoints (customers, transactions, undo)
-      parchi.py          # /api/v1/parchi endpoints (prescriptions, doses, mark done, snooze)
-      bazaar.py          # /api/v1/bazaar endpoints (overview, snapshot, spoken briefing)
-      settings.py        # /api/v1/settings endpoints (preferences, diagnostics, latency ping, reset)
-    modules/
-      khata/             # Ledger logic with integer paise arithmetic and 8s undo
-      parchi/            # Meal-slot scheduling, verbatim recording, and refusal guards
-      bazaar/            # Safe yfinance market feeds with socket timeout guards & 5m cache
-    core/
-      pipeline.py        # Voice pipeline orchestrator (Prisma STT -> Evon -> Guardrails -> SQLite -> Timbre TTS)
-      session.py         # Multi-turn conversational session state and undo stack
-    db/
-      session.py         # SQLite connection manager with WAL mode & foreign keys
-      seed.py            # Sample demo fixtures & reset_demo_data()
-frontend/
-  index.html             # Editorial landing page matching design reference
-  app/
-    overview.html        # /app central gateway & module overview
-    bol-khata.html       # /app/bol-khata dedicated ledger workspace
-    parchi.html          # /app/parchi dedicated medicine reminder workspace
-    sensex-awaaz.html    # /app/sensex-awaaz dedicated market intelligence workspace
-    settings.html        # /app/settings shopkeeper preferences & diagnostics
-  styles/
-    tokens.css           # Design tokens (Ice Silver, Deep Aubergine, Marigold)
-    landing.css          # Editorial layout, typography, grid, responsive styles
-    app-shell.css        # Multi-page shell, topbar navigation, cards, drawers, forms
-    agent-component.css  # Voice mic, speech wave, action confirmation bubbles
-  js/
-    agent-component.js   # Reusable conversational agent with Web Audio MediaRecorder
-    bol-khata-page.js    # Ledger client-side controller & modal handlers
-    parchi-page.js       # Medicine reminders controller & timeline handlers
-    sensex-page.js       # Market overview controller & audio player
-    settings-page.js     # Settings controller & live latency diagnostics runner
-  assets/
-    botanical-artwork.svg # High-fidelity botanical orchid with integrated audio waveforms
-    mandala.svg          # Ornate golden Indian mandala medallion
-data/
-  vaani.db               # Local SQLite database in WAL mode (git-ignored)
-scripts/
-  run_dev.py             # Development server launcher
-  eval_utterances.py     # 40-utterance benchmark test suite
-  test_landing_server.py # Phase 1 integration tests
-  test_phase2_multi_page.py # Phase 2 multi-page verification suite
-```
-
----
-
-## Design System
-
-- **Palette:**
-  - Warm Ivory (`#F8F6F0`) & Ice Silver (`#DDE3E8`)
-  - Deep Aubergine ink (`#3A0F34`)
-  - Marigold accent (`#EAAA00`) & Flame Amber (`#F58220`)
-- **Typography:**
-  - Display: *Fraunces* (Latin) & *Noto Serif Devanagari*
-  - Body: *Noto Sans* & *Noto Sans Devanagari*
-- **Visual Language:**
-  - Architectural grid lines with meter coordinates (`TIME MET&DATE`, `SUBTLE METADATS`, `I FINE`)
-  - Asymmetric editorial composition with botanical flower and horizontal audio frequency spectrum
-  - Layered product mockups (central phone, Bahi-Khata ledger, Parchi slip, Sensex graph)
 
 ---
 
 ## Privacy & Safety
 
-Audio and spoken responses are processed through Gnani's sovereign Indian speech infrastructure. All business records, customer balances, and prescriptions are stored locally in SQLite (`vaani.db`). Data is never monetized or sold to third parties.
-
+- **Zero Disk Audio Retention:** Microphone audio is validated and transcoded purely in memory (`io.BytesIO`) and discarded immediately after transcription.
+- **Local-First Ledger:** Business records, balances, and prescriptions reside locally in SQLite (`vaani.db`) with foreign keys and WAL mode enabled.
+- **Strict Domain Boundaries:** No LLM arithmetic, no medical advice or unverified dosages, and no stock buy/sell recommendations.

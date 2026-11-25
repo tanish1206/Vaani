@@ -7,6 +7,15 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   class SensexWorkspace {
     constructor() {
       this.latestBriefText = '';
@@ -121,7 +130,7 @@
         // Watchlist Table
         this.renderWatchlist(data.quotes || []);
 
-        if (data.as_of && this.chartTimestamp) {
+        if (data.as_of && data.as_of.includes('T') && this.chartTimestamp) {
           const dateStr = data.as_of.split('T')[0];
           const timeStr = data.as_of.split('T')[1].substring(0, 5);
           this.chartTimestamp.textContent = `As Of: ${dateStr} ${timeStr} UTC`;
@@ -150,20 +159,20 @@
       this.watchlistTbody.innerHTML = quotes.map(q => {
         const chg = q.change_abs || 0;
         const isUp = chg >= 0;
-        const timePart = q.as_of ? q.as_of.split('T')[1].substring(0, 5) : '15:30';
+        const timePart = (q.as_of && q.as_of.includes('T')) ? q.as_of.split('T')[1].substring(0, 5) : '15:30';
 
         return `
           <tr>
-            <td><strong>${q.label}</strong></td>
-            <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${q.symbol}</td>
+            <td><strong>${escapeHtml(q.label)}</strong></td>
+            <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${escapeHtml(q.symbol)}</td>
             <td style="font-weight: 700; font-variant-numeric: tabular-nums;">&#8377;${q.price ? q.price.toLocaleString('en-IN') : '--'}</td>
             <td style="color: ${isUp ? 'var(--success)' : 'var(--danger)'}; font-weight: 700;">
               ${isUp ? '&#9650; +' : '&#9660; '}${chg} (${q.change_pct || 0}%)
             </td>
-            <td style="font-size: 12px; color: var(--text-subtle);">${timePart}</td>
+            <td style="font-size: 12px; color: var(--text-subtle);">${escapeHtml(timePart)}</td>
             <td>
               <span style="font-size: 11px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--ice-50); border: 1px solid var(--border);">
-                ${q.is_sample ? 'sample' : (q.source || 'cache')}
+                ${q.is_sample ? 'sample' : escapeHtml(q.source || 'cache')}
               </span>
             </td>
           </tr>
@@ -171,8 +180,26 @@
       }).join('');
     }
 
-    playSpokenBrief() {
+    async playSpokenBrief() {
       if (!this.latestBriefText) return;
+      try {
+        const resp = await fetch('/api/v1/voice/speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: this.latestBriefText, language: 'hi-IN' })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.audio_base64) {
+            const audio = new Audio('data:audio/wav;base64,' + data.audio_base64);
+            await audio.play();
+            return;
+          }
+        }
+      } catch (err) {
+        console.info('Falling back to browser speechSynthesis for market brief:', err);
+      }
+
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utt = new SpeechSynthesisUtterance(this.latestBriefText);
